@@ -1,0 +1,29 @@
+---
+- hosts: all
+  vars:    
+    DOMAIN: "abelian.example.com"
+    MAIL_DOMAIN: "direct.abelian.example.com"
+    EXTERNAL_IP: "10.0.0.1"
+    SPOOL: "/var/spool/direct"
+  remote_user: root
+  tasks:  
+  - name: Update repositories cache 
+    apt: update_cache=yes  
+    sudo: yes
+  - name: Install unzip
+    apt: update_cache=yes
+    apt: name=unzip state=present
+    sudo: yes
+  - name: Install PostgreSql
+    apt: name=postgresql state=present
+    apt: name=postgresql-contrib state=present
+    apt: name=python-psycopg2 state=present  
+    sudo: yes
+  - name: Install PowerDNS
+    apt: name=pdns-server state=present
+    sudo: yes
+#DEBIAN_FRONTEND=noninteractive apt-get install -y pdns-backend-pgsql
+#pdns-server    
+  - name: Execute shell script for installing the other components
+    shell: /vagrant/install_partial.sh > /vagrant/mylog
+  
