@@ -19,5 +19,12 @@
   "bugs": {
     "url": "https://github.com/Medicasoft/Abelian/issues"
   },
-  "homepage": "https://github.com/Medicasoft/Abelian"
+  "homepage": "https://github.com/Medicasoft/Abelian",
+  "dependencies": {
+    "restify": "~2.8.1",
+    "pg": "~3.2.0",
+    "async": "~0.9.0",
+    "event-stream": "~3.1.5",
+    "node-uuid": "~1.4.1"
+  }
 }

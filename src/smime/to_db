@@ -1,0 +1,12 @@
+#!/usr/bin/python
+import sys
+import psycopg2
+queue_id = sys.argv[1]
+recip = sys.argv[2]
+sender = sys.argv[3]
+msg_orig = open(sys.argv[4],'r')
+msg_decr = open(sys.argv[5],'r')
+conn = psycopg2.connect(database='maildb', user='direct')
+cur = conn.cursor();
+cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg) VALUES(%s,%s,%s,%s,%s);",(queue_id,recip,sender,msg_orig.read(),msg_decr.read()))
+conn.commit() 
