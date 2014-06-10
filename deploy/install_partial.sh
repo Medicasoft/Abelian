@@ -105,8 +105,8 @@ psql -d maildb -c "
 		OWNER TO direct;
 "
 EOF
-cp /home/ubuntu/install/misc/rx.sh /var/spool/direct/rx.sh
-cp /home/ubuntu/install/misc/to_db /var/spool/direct/to_db
+cp /home/ubuntu/install/deploy/rx.sh /var/spool/direct/rx.sh
+cp /home/ubuntu/install/deploy/to_db /var/spool/direct/to_db
 chown direct:direct /var/spool/direct/rx.sh
 chown direct:direct /var/spool/direct/to_db
 chmod 770 /var/spool/direct/rx.sh
@@ -115,7 +115,7 @@ postconf -e 'mailbox_transport = direct-rx'
 postconf -M direct-rx/unix='direct-rx unix - n n - - pipe flags=RXq user=direct argv=/var/spool/direct/rx.sh ${queue_id} ${recipient} ${sender}'
 /etc/init.d/postfix reload
 #install REST API
-cp /home/ubuntu/install/api/* $SPOOL/api/
+cp /home/ubuntu/install/src/api/* $SPOOL/api/
 cd $SPOOL/api
 npm install
 su - direct << EOF
