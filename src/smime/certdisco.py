@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import dns.resolver, requests, ldap, logging
+import dns.resolver, ldap, logging
 CERT_TEMPLATE = """
 -----BEGIN CERTIFICATE-----
 %s
@@ -18,6 +18,7 @@ def dns_cert(addr):
             if rdata.certificate_type == 1: #PKIX
                 certs.append(rdata.certificate)
             elif rdata.certificate_type == 4: #IPKIX
+                import requests
                 #try GETting it from url (DER)
                 res = requests.get(answer[3])
                 if res.status_code != 200:
@@ -51,14 +52,15 @@ def ldap_qry(uri, mail):
         l = ldap.initialize(uri)
         res = l.search_s('', ldap.SCOPE_SUBTREE, '(mail={0})'.format(mail), ['userCertificate'])
         for dn, uc in res:
-            certs.append(uc['userCertificate'])
+            certs.extend(uc['userCertificate'])
     except ldap.LDAPError as x:
         logging.warning('LDAP query failed: %s: %s', x, mail)
     return certs
 
 def print_pem_cert(certs):
+    import base64
     for cert in certs:
-        print certs
+        print base64.b64encode(cert)
     sys.exit(0)
 
 if __name__ == "__main__":
@@ -84,18 +86,18 @@ if __name__ == "__main__":
     #try address bound dns CERT query
     certs = dns_cert(user + '.' + domain)
     if certs != []:
-        print_pem_cert(cert)
+        print_pem_cert(certs)
     
     #try domain bound dns CERT query
     certs = dns_cert(domain)
     if certs != []:
-        print_pem_cert(cert)
+        print_pem_cert(certs)
 
     #make a SRV query to identify LDAP servers
     uris = dns_srv(domain)
     if uris != []:
         for uri in uris:
-            print ldap_qry(uri, mail)
+            print_pem_cert(ldap_qry(uri, mail))
         sys.exit(0)
 
     sys.exit(1)
