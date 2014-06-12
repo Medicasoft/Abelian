@@ -57,11 +57,12 @@ def ldap_qry(uri, mail):
         logging.warning('LDAP query failed: %s: %s', x, mail)
     return certs
 
-def print_pem_cert(certs):
-    import base64
+def print_pem_cert(certs, anchor, addr, domain, addressBound):
+    import base64, certvld
     for cert in certs:
-        print base64.b64encode(cert)
-    sys.exit(0)
+        if certvld.validate(cert, 'anchor.pem', addr, domain, addressBound):
+            print base64.b64encode(cert)
+            sys.exit(0)
 
 if __name__ == "__main__":
     import sys
@@ -86,18 +87,20 @@ if __name__ == "__main__":
     #try address bound dns CERT query
     certs = dns_cert(user + '.' + domain)
     if certs != []:
-        print_pem_cert(certs)
-    
+        print_pem_cert(certs, '', mail, domain, True)
+        sys.exit(0)
+
     #try domain bound dns CERT query
     certs = dns_cert(domain)
     if certs != []:
-        print_pem_cert(certs)
+        print_pem_cert(certs, '', mail, domain, False)
+        sys.exit(0)
 
     #make a SRV query to identify LDAP servers
     uris = dns_srv(domain)
     if uris != []:
         for uri in uris:
-            print_pem_cert(ldap_qry(uri, mail))
+            print_pem_cert(ldap_qry(uri, mail), '', mail, domain, True)
         sys.exit(0)
 
     sys.exit(1)
