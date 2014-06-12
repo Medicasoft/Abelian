@@ -1,0 +1,81 @@
+# Syslog stuff
+COMPONENT ([\w._\/%-]+)
+COMPID postfix\/%{COMPONENT:component}(?:\[%{POSINT:pid}\])?
+POSTFIX %{SYSLOGTIMESTAMP:timestamp} %{SYSLOGHOST:hostname} %{COMPID}: %{QUEUEID:queueid}
+
+# Milter
+HELO (?:\[%{IP:helo}\]|%{HOST:helo}|%{DATA:helo})
+
+MILTERCONNECT %{QUEUEID:qid}: milter-reject: CONNECT from %{RELAY:relay}: %{GREEDYDATA:milter_reason}; proto=%{WORD:proto}
+MILTERUNKNOWN %{QUEUEID:qid}: milter-reject: UNKNOWN from %{RELAY:relay}: %{GREEDYDATA:milter_reason}; proto=%{WORD:proto}
+MILTEREHLO %{QUEUEID:qid}: milter-reject: EHLO from %{RELAY:relay}: %{GREEDYDATA:milter_reason}; proto=%{WORD:proto} helo=<%{HELO}>
+MILTERMAIL %{QUEUEID:qid}: milter-reject: MAIL from %{RELAY:relay}: %{GREEDYDATA:milter_reason}; from=<%{EMAILADDRESS:from}> proto=%{WORD:proto} helo=<%{HELO}>
+MILTERHELO %{QUEUEID:qid}: milter-reject: HELO from %{RELAY:relay}: %{GREEDYDATA:milter_reason}; proto=%{WORD:proto} helo=<%{HELO}>
+MILTERRCPT %{QUEUEID:qid}: milter-reject: RCPT from %{RELAY:relay}: %{GREEDYDATA:milter_reason}; from=<%{EMAILADDRESS:from}> to=<%{EMAILADDRESS:to}> proto=%{WORD:proto} helo=<%{HELO}>
+MILTERENDOFMESSAGE %{QUEUEID:qid}: milter-reject: END-OF-MESSAGE from %{RELAY:relay}: %{GREEDYDATA:milter_reason}; from=<%{EMAILADDRESS:from}> to=<%{EMAILADDRESS:to}> proto=%{WORD:proto} helo=<%{HELO}>
+
+# Postfix stuff
+QUEUEID (?:[A-F0-9]+|NOQUEUE)
+EMAILADDRESSPART [a-zA-Z0-9_.+-=:]+
+EMAILADDRESS %{EMAILADDRESSPART:local}@%{EMAILADDRESSPART:remote}
+RELAY (?:%{HOSTNAME:relayhost}(?:\[%{IP:relayip}\](?::[0-9]+(.[0-9]+)?)?)?)
+#RELAY (?:%{HOSTNAME:relayhost}(?:\[%{IP:relayip}\](?:%{POSREAL:relayport})))
+POSREAL [0-9]+(.[0-9]+)?
+#DELAYS %{POSREAL:a}/%{POSREAL:b}/%{POSREAL:c}/%{POSREAL:d}
+#DELAYS (%{POSREAL}[/]*)+
+DSN %{NONNEGINT}.%{NONNEGINT}.%{NONNEGINT}
+STATUS sent|deferred|bounced|expired
+PERMERROR 5[0-9]{2}
+MESSAGELEVEL reject|warning|error|fatal|panic
+
+POSTFIXSMTPMESSAGE %{MESSAGELEVEL}: %{GREEDYDATA:reason}
+POSTFIXACTION discard|dunno|filter|hold|ignore|info|prepend|redirect|replace|reject|warn
+
+# postfix/smtp and postfix/lmtp, postfix/local and postfix/error
+POSTFIXSMTP %{POSTFIXSMTPRELAY}|%{POSTFIXSMTPCONNECT}|%{POSTFIXSMTP5XX}|%{POSTFIXSMTPREFUSAL}|%{POSTFIXSMTPLOSTCONNECTION}|%{POSTFIXSMTPTIMEOUT}
+POSTFIXSMTPRELAY %{QUEUEID:qid}: to=<%{EMAILADDRESS:to}>,(?:\sorig_to=<%{EMAILADDRESS:orig_to}>,)? relay=%{RELAY},(?: conn_use=%{POSREAL:conn_use},)? (%{WORD}=%{DATA},)+ dsn=%{DSN:dsn}, status=%{STATUS:result} %{GREEDYDATA:reason}
+POSTFIXSMTPCONNECT connect to %{RELAY}: %{GREEDYDATA:reason}
+POSTFIXSMTP5XX %{QUEUEID:qid}: to=<%{EMAILADDRESS:to}>,(?:\sorig_to=<%{EMAILADDRESS:orig_to}>,)? relay=%{RELAY}, (%{WORD}=%{DATA},)+ dsn=%{DSN:dsn}, status=%{STATUS:result} \(host %{HOSTNAME}\[%{IP}\] said: %{PERMERROR:responsecode} %{DATA:smtp_response} \(in reply to %{DATA:command} command\)\)
+POSTFIXSMTPREFUSAL %{QUEUEID:qid}: host %{RELAY} refused to talk to me: %{GREEDYDATA:reason}
+POSTFIXSMTPLOSTCONNECTION %{QUEUEID:qid}: lost connection with %{RELAY} while %{GREEDYDATA:reason}
+POSTFIXSMTPTIMEOUT %{QUEUEID:qid}: conversation with %{RELAY} timed out while %{GREEDYDATA:reason}
+
+
+# postfix/smtpd
+POSTFIXSMTPD %{POSTFIXSMTPDCONNECTS}|%{POSTFIXSMTPDMILTER}|%{POSTFIXSMTPDACTIONS}|%{POSTFIXSMTPDTIMEOUTS}|%{POSTFIXSMTPDLOGIN}|%{POSTFIXSMTPDCLIENT}|%{POSTFIXSMTPDNOQUEUE}|%{POSTFIXSMTPDWARNING}|%{POSTFIXSMTPDLOSTCONNECTION}
+POSTFIXSMTPDCONNECTS (?:dis)?connect from %{RELAY}
+POSTFIXSMTPDMILTER %{MILTERCONNECT}|%{MILTERUNKNOWN}|%{MILTEREHLO}|%{MILTERMAIL}|%{MILTERHELO}|%{MILTERRCPT}
+POSTFIXSMTPDACTIONS %{QUEUEID:qid}: %{POSTFIXACTION:postfix_action}: %{DATA:command} from %{RELAY}: %{PERMERROR:responsecode} %{DSN:dsn} %{DATA}: %{DATA:reason}; from=<%{EMAILADDRESS:from}> to=<%{EMAILADDRESS:to}> proto=%{DATA:proto} helo=<%{HELO}>
+#POSTFIXSMTPDACTIONS %{QUEUEID:qid}: %{POSTFIXACTION:postfix_action}: %{DATA:command} from %{RELAY}: %{DATA:smtp_response}: %{DATA:reason}; from=<%{EMAILADDRESS:from}> to=<%{EMAILADDRESS:to}> proto=%{DATA:proto} helo=<%{HELO}>
+POSTFIXSMTPDTIMEOUTS timeout after %{DATA:command} from %{RELAY}
+POSTFIXSMTPDLOGIN %{QUEUEID:qid}: client=%{DATA:client}, sasl_method=%{DATA:saslmethod}, sasl_username=%{GREEDYDATA:saslusername}
+POSTFIXSMTPDCLIENT %{QUEUEID:qid}: client=%{GREEDYDATA:client}
+POSTFIXSMTPDNOQUEUE NOQUEUE: %{POSTFIXACTION:postfix_action}: %{DATA:command} from %{RELAY}: %{GREEDYDATA:reason}
+POSTFIXSMTPDWARNING warning: %{IP}: %{GREEDYDATA:reason}
+POSTFIXSMTPDLOSTCONNECTION lost connection after %{DATA:smtp_response} from %{RELAY}
+
+# postfix/cleanup
+POSTFIXCLEANUP %{POSTFIXCLEANUPMESSAGE}|%{POSTFIXCLEANUPMILTER}
+POSTFIXCLEANUPMESSAGE %{QUEUEID:qid}: (resent-)?message-id=<%{GREEDYDATA:messageid}>
+POSTFIXCLEANUPMILTER %{MILTERENDOFMESSAGE}
+
+# postfix/bounce
+POSTFIXBOUNCE %{QUEUEID:qid}: sender non-delivery notification: %{QUEUEID:bouncequeueid}
+
+# postfix/qmgr and postfix/pickup
+POSTFIXQMGR %{QUEUEID:qid}: (?:removed|from=<(?:%{EMAILADDRESS:from})?>(?:, size=%{POSINT:size}, nrcpt=%{POSINT:nrcpt} \(%{GREEDYDATA:queuestatus}\))?)
+
+# postfix/anvil
+POSTFIXANVIL statistics: %{DATA:anvilstatistic} for (%{DATA:remotehost}) at %{SYSLOGTIMESTAMP:timestamp}
+
+# AMAVISD
+USER_AGENT User-Agent|X-Mailer
+RECIPIENTS <%{EMAILADDRESS:recipient}>(,<%{GREEDYDATA:recipientlist}>)?
+ORIGIN (%{DATA:originating_net} )\[%{IP:relay}\](:%{POSINT}) \[%{IP:originip}\]
+AMAVIS %{SYSLOGBASE} \(%{DATA}\) %{WORD:action} %{WORD:ccat} \{%{GREEDYDATA:policybank}\}, %{ORIGIN} <(%{EMAILADDRESS:from})> -> %{GREEDYDATA}, Queue-ID: %{QUEUEID}, Message-ID: <%{DATA:messageid}>%{GREEDYDATA:rest_of_message}
+
+#AMAVISDNEW %{SYSLOGBASE} \(%{DATA:amavisdid}\) %{WORD:action} %{WORD:ccat} %{GREEDYDATA:policybank}, (%{GREEDYDATA:origin_net}) \[%{IP:relayip}\](:%{POSINT}) \[%{IP:originip}\] <(%{EMAILADDRESS:from})?> -> %{RECIPIENTS:recipients}, Queue-ID:%{QUEUEID}, Message-ID: <%{DATA:messageid}>,( mail_id: %{DATA:mail_id},)? Hits: %{NUMBER:hits:float}, size: %{NUMBER:size:int},( queued_as: %{QUEUEID:qid},)? Subject: "%{DATA:subject}", From: %{DATA:from},( %{USER_AGENT}: %{DATA:user_agent},)? Tests: \[%{DATA:TESTS}\],( shortcircuit=%{WORD:shortcircuit},)?( autolearn=%{WORD:autolearn},)? %{POSINT:elapsedtime} ms
+
+#AMAVISDNEW %{SYSLOGBASE} \(%{DATA:amavisdid}\) %{WORD:action} %{WORD:ccat} %{GREEDYDATA:policybank}, \[%{RELAY:relayip}\] \[%{IP:originip}\] <(%{EMAILADDRESS:from})?> -> %{RECIPIENTS:recipients}, Message-ID: <%{DATA:messageid}>,( mail_id: %{DATA:mail_id},)? Hits: %{NUMBER:hits:float}, size: %{NUMBER:size:int},( queued_as: %{QUEUEID:qid},)? Subject: "%{DATA:subject}", From: %{DATA:from},( %{USER_AGENT}: %{DATA:user_agent},)? Tests: \[%{DATA:TESTS}\],( shortcircuit=%{WORD:shortcircuit},)?( autolearn=%{WORD:autolearn},)? %{POSINT:elapsedtime} ms
+
+PF (%{POSTFIXSMTP}|%{POSTFIXANVIL}|%{POSTFIXQMGR}|%{POSTFIXBOUNCE}|%{POSTFIXCLEANUP}|%{POSTFIXSMTPD}|%{AMAVIS})
