@@ -1,29 +1,76 @@
 ---
 - hosts: all
+  sudo: yes  
   vars:    
     DOMAIN: "abelian.example.com"
     MAIL_DOMAIN: "direct.abelian.example.com"
     EXTERNAL_IP: "10.0.0.1"
     SPOOL: "/var/spool/direct"
-  remote_user: root
+    env_noninteractive:
+      DEBIAN_FRONTEND: "noninteractive"  
   tasks:  
-  - name: Update repositories cache 
-    apt: update_cache=yes  
-    sudo: yes
-  - name: Install unzip
-    apt: update_cache=yes
-    apt: name=unzip state=present
-    sudo: yes
-  - name: Install PostgreSql
-    apt: name=postgresql state=present
-    apt: name=postgresql-contrib state=present
-    apt: name=python-psycopg2 state=present  
-    sudo: yes
-  - name: Install PowerDNS
-    apt: name=pdns-server state=present
-    sudo: yes
-#DEBIAN_FRONTEND=noninteractive apt-get install -y pdns-backend-pgsql
-#pdns-server    
-  - name: Execute shell script for installing the other components
-    shell: /vagrant/install_partial.sh > /vagrant/mylog
-  
+   -  name: Update repositories cache 
+      apt: update_cache=yes        
+    
+   -  name: Install unzip
+      apt: name=unzip state=present
+    
+   -  name: Install PostgreSql
+      apt: name={{item}} state=present
+      with_items:
+       - postgresql
+       - postgresql-contrib
+       - python-psycopg2
+
+   -  name: Check postgresql started and set to be started at boot
+      service: name=postgresql state=started enabled=yes
+    
+   -  name: Install PowerDNS
+      apt: name={{item}} state=present
+      with_items:
+        - pdns-server
+        - pdns-backend-pgsql  
+      environment: env_noninteractive
+
+   -  name: Start powerdns and set to be started at boot
+      service: name=pdns state=started enabled=yes
+
+   -  name: Configure Postfix installer
+      debconf: name=postfix question="{{item.question}}" value="{{item.value}}" vtype='string'
+      with_items:
+         - { question: 'postfix/mailname', value: "{{MAIL_DOMAIN}}" }
+         - { question: 'postfix/main_mailer_type', value: "Internet Site" }
+
+   -  name: Install Postfix
+      apt: name={{item}} state=present
+      with_items:
+       - postfix
+       - postfix-pgsql
+		
+   -  name: Install node.js
+      apt: name={{item}} state=present
+      with_items:
+         - nodejs
+         - npm
+         - nodejs-legacy
+
+   -  name: Install node.js module forever
+      npm: name=forever global=yes  
+    
+   -  name: Create Direct group
+      group: name=direct state=present
+
+   -  name: Create Direct user
+      user: name=direct home={{SPOOL}} group=direct      
+
+   -  name: Create Direct file structure
+      file: path={{item}} state=directory group=direct owner=direct mode=770
+      with_items:
+         - "{{SPOOL}}"
+         - "{{SPOOL}}/ca"
+         - "{{SPOOL}}/crl"
+         - "{{SPOOL}}/api"
+         - "{{SPOOL}}/tmp"
+
+   -  include: certificates.yml
+
