@@ -1,0 +1,31 @@
+  -  name: Generate server certificates for ca - ca.key        
+     command: openssl genrsa -out "{{SPOOL}}/ca/ca.key" 2048
+
+  -  name: Generate server certificates for ca - ca.pem        
+     command: openssl req -new -x509 -days 365 -subj "/CN={{DOMAIN}}" -key "{{SPOOL}}/ca/ca.key" -out "{{SPOOL}}/ca/ca.pem"
+
+
+  -  name: Generate server certificates for mail root - direct.key
+     command: openssl genrsa -out "{{SPOOL}}/ca/direct.key" 2048
+
+  -  name: Generate server certificates for mail root - direct.csr
+     command: openssl req -new -subj "/CN={{MAIL_DOMAIN}}" -key "{{SPOOL}}/ca/direct.key" -out "{{SPOOL}}/ca/direct.csr"
+
+  -  name: Generate server certificates for mail root - direct.pem
+     command: openssl x509 -req -days 365 -in "{{SPOOL}}/ca/direct.csr" -CA "{{SPOOL}}/ca/ca.pem" -CAkey "{{SPOOL}}/ca/ca.key" -set_serial 1 -out "{{SPOOL}}/ca/direct.pem" -setalias "Self Signed SMIME" -addtrust emailProtection -addreject clientAuth -addreject serverAuth -trustout
+
+  -  name: Fetch the generated ca.pem
+     fetch: src={{SPOOL}}/ca/ca.pem dest=certificates
+
+  -  name: Save certificate info (for configuring PowerDNS) as <PKIX tagkey RSASHA1 content> – where tagkey is the decimal value of the last two bytes of the modulus (and skip –--BEGIN CERTIFICATE-----)
+     shell: openssl x509 -in "{{SPOOL}}/ca/direct.pem" -modulus | awk '
+          BEGIN {ORS=" ";OFS=" ";PKIX=1;RSASHA1=5}
+          {
+            if(NR==1) printf("%d %d %d ",PKIX,strtonum("0x" substr($0,length($0)-3)),RSASHA1);               
+            if(NR>3) print l;
+            l=$0;
+         }'
+     register: CERT
+     sudo: yes  
+
+

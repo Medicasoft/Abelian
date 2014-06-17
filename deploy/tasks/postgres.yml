@@ -1,0 +1,9 @@
+-  name: Install PostgreSql
+   apt: name={{item}} state=present
+   with_items:
+    - postgresql
+    - postgresql-contrib
+    - python-psycopg2
+
+-  name: Check postgresql started and set it to be started at boot
+   service: name=postgresql state=started enabled=yes

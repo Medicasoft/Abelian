@@ -1,0 +1,12 @@
+--DELETE FROM records;
+--TRUNCATE TABLE domains RESTART IDENTITY CASCADE;
+
+INSERT INTO domains(name,type) VALUES('{{DOMAIN}}', 'NATIVE');
+INSERT INTO records(domain_id,name,type,content,ttl) VALUES(1,'{{DOMAIN}}','SOA','ns1.{{DOMAIN}}',300);
+INSERT INTO records(domain_id,name,type,content,ttl) VALUES(1,'{{DOMAIN}}','NS','ns1.{{DOMAIN}}',300);
+INSERT INTO records(domain_id,name,type,content,ttl,prio) VALUES(1,'{{MAIL_DOMAIN}}','MX','smtp.{{DOMAIN}}',300,10);
+INSERT INTO records(domain_id,name,type,content,ttl) VALUES(1,'{{DOMAIN}}','A','{{EXTERNAL_IP}}',300);
+INSERT INTO records(domain_id,name,type,content,ttl) VALUES(1,'ns1.{{DOMAIN}}','A','{{EXTERNAL_IP}}',300);
+INSERT INTO records(domain_id,name,type,content,ttl) VALUES(1,'smtp.{{DOMAIN}}','A','{{EXTERNAL_IP}}',300);
+INSERT INTO records(domain_id,name,type,content,ttl) VALUES(1,'{{MAIL_DOMAIN}}','CERT','{{CERT.stdout}}',300);
+

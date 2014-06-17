@@ -1,0 +1,20 @@
+- name: Update repositories cache 
+  apt: update_cache=yes      
+ 
+- name: Install unzip
+  apt: name=unzip state=present
+ 
+- name: Create Direct group
+  group: name=direct state=present
+
+- name: Create Direct user
+  user: name=direct home={{SPOOL}} group=direct    
+
+- name: Create Direct file structure
+  file: path={{item}} state=directory group=direct owner=direct mode=770
+  with_items:
+    - "{{SPOOL}}"
+    - "{{SPOOL}}/ca"
+    - "{{SPOOL}}/crl"
+    - "{{SPOOL}}/api"
+    - "{{SPOOL}}/tmp"

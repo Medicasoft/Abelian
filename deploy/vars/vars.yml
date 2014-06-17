@@ -1,0 +1,5 @@
+DOMAIN: "abelian.example.com"
+MAIL_DOMAIN: "direct.abelian.example.com"
+EXTERNAL_IP: "10.0.0.1"
+SPOOL: "/var/spool/direct"      
+TEMP_SQL_PATH: "/home/sql-direct-tmp"

@@ -1,0 +1,23 @@
+- name: Install node.js
+  apt: name={{item}} state=present
+  with_items:
+      - nodejs
+      - npm
+      - nodejs-legacy
+
+- name: Install node.js module forever as global
+  npm: name=forever global=yes  
+
+- name: Deploy API files
+  copy: src=../src/api/ dest={{SPOOL}}/api/
+
+- name: Install the required Node.js packages
+  npm: path={{SPOOL}}/api
+    
+- name: Set Node.js app as Upstart service
+  template: src=templates/direct.j2 dest=/etc/init/direct.conf
+  
+- name: Start Node.js service
+  service: name=direct state=started  
+
+

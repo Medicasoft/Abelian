@@ -1,0 +1,45 @@
+   -  name: Configure Postfix installer
+      debconf: name=postfix question="{{item.question}}" value="{{item.value}}" vtype='string'
+      with_items:
+         - { question: 'postfix/mailname', value: "{{MAIL_DOMAIN}}" }
+         - { question: 'postfix/main_mailer_type', value: "Internet Site" }
+
+   -  name: Install Postfix
+      apt: name={{item}} state=present
+      with_items:
+       - postfix
+       - postfix-pgsql
+
+   - name: Create the postfix user 'direct'
+     postgresql_user: name=direct state=present encrypted=yes role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE
+     sudo_user: "{{user}}"
+     
+   - name: Create the postfix database 'maildb'
+     postgresql_db: name=maildb state=present owner=direct
+     sudo_user: "{{user}}"
+     
+   - name: Create postfix database structure
+     command: psql -d maildb -c "{{lookup('file', '../files/postfix.sql')}}"
+     sudo_user: "{{user}}"
+        
+   - name: Copy server files to remote node    
+     copy: src=files/{{item}} dest=/var/spool/direct/{{item}}
+     with_items: 
+        - rx.sh
+        - to_db
+        
+   - name: Set file attributes
+     file: path=/var/spool/direct/{{item}} group=direct owner=direct mode=770
+     with_items: 
+        - rx.sh
+        - to_db
+        
+   - name: Edit postfix config file and service entries
+     command: postconf {{item}}
+     with_items:
+        - "-e 'mailbox_transport = direct-rx'"
+        - "-M direct-rx/unix='direct-rx unix - n n - - pipe flags=RXq user=direct argv=/var/spool/direct/rx.sh ${queue_id} ${recipient} ${sender}'"
+     notify: 
+     - Reload postfix
+     
+

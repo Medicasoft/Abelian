@@ -1,0 +1,30 @@
+   -  name: Install PowerDNS
+      apt: name={{item}} state=present
+      with_items:
+        - pdns-server
+        - pdns-backend-pgsql 
+
+   - name: Remove pdns.simplebind config file
+     file: name=/etc/powerdns/pdns.d/pdns.simplebind.conf state=absent
+     notify:
+       - Restart pdns
+
+   - name: Create temp sql script directory
+     file: name={{TEMP_SQL_PATH}} state=directory mode=770 owner=postgres group=postgres
+
+   - name: Prepare pdns database script
+     template: src=templates/pdns_db.j2 dest={{TEMP_SQL_PATH}}/pdns_db.sql      
+
+   - name: Fill pdns database
+     command: psql -d pdns -f {{TEMP_SQL_PATH}}/pdns_db.sql    
+     sudo_user: "{{user}}"
+     notify:
+       - Restart pdns
+
+   - name: Remove temp script file
+     file: name={{TEMP_SQL_PATH}}/pdns_db.sql state=absent
+
+
+   - name: Configure pdnssec
+     command: pdnssec rectify-zone {{DOMAIN}}
+
