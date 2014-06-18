@@ -7,13 +7,13 @@ def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128
         smime.pkey = sender_key
         smime.x509 = sender_cert
     	
-        signature = smime.sign(BIO.MemoryBuffer(message))
+        signature = smime.sign(BIO.MemoryBuffer(message), flags=SMIME.PKCS7_DETACHED)
         #init buffer
         message_signed = BIO.MemoryBuffer()
         smime.write(message_signed, signature, BIO.MemoryBuffer(message))
         cert_stack = X509.X509_Stack()
         #for cert in recipient_certs:
-        cert_stack.push(recipient_cert)
+        cert_stack.push(X509.load_cert_der_string(recipient_cert))
 
         smime.set_x509_stack(cert_stack)
         smime.set_cipher(SMIME.Cipher(cipher)) 
