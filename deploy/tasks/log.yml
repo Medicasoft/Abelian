@@ -82,10 +82,16 @@
   sudo: yes
  
 - name: Configure Kibana elastic search url
-  command: sed -i -e 's|elasticsearch:\s"http://"+window.location.hostname+":9200",|elasticsearch{{':'}} "http://192.168.33.10:9200",|' /opt/kibana/config.js
-
+  replace: 
+    dest=/opt/kibana/config.js
+    regexp='elasticsearch:\s"http://"\+window\.location\.hostname\+":9200",'    
+    replace='elasticsearch{{':'}} "http://192.168.33.10:9200",'
+    
 - name: Configure Kibana dashboards json
-  command: sed -i -e 's|default\.json|LogDashb.json|' /opt/kibana/config.js
+  replace: 
+    dest=/opt/kibana/config.js
+    regexp='default\.json'    
+    replace='LogDashb.json'
       
 - name: Copy Kibana dashboard
   copy: src=../src/log/kibana/LogDashb.json dest=/opt/kibana/app/dashboards/
@@ -94,5 +100,8 @@
   apt: name=nginx state=present
 
 - name: Configure nginx
-  command: sed -i -e 's|root /usr/share/nginx/html;|root /opt/kibana;|' /etc/nginx/sites-available/default
+  replace: 
+    dest=/etc/nginx/sites-available/default
+    regexp='root /usr/share/nginx/html;'    
+    replace='root /opt/kibana;'
   notify: Restart nginx
