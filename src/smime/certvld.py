@@ -43,8 +43,8 @@ def verify_cert(cert, anchor, addr):
     import subprocess
     certfile = addr.replace('@', '.')
     cert.save(certfile, crypto.X509.FORMAT_PEM)
-    logging.debug('Verifying certificate expiration, signature, revokation and path: %s', anchor)
-    command = ('/usr/bin/env', 'openssl', 'verify', '-CAfile', anchor, addr.replace('@', '.'))
+    logging.debug('Verifying certificate expiration, signature, revocation and path: %s', anchor)
+    command = ('/usr/bin/env', 'openssl', 'verify', '-CApath', '/var/spool/direct/ca', addr.replace('@', '.'))
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     if (stderr == "") and (stdout.strip() == "%s: OK" % certfile):
