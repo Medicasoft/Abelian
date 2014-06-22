@@ -62,7 +62,7 @@ def send_message(sender, recipient, message_id, message):
 
     try:
         logging.debug('Connecting to "maildb" database')
-        conn = psycopg2.connect(database='maildb', user='dbmail', password='.Logimax.')
+        conn = psycopg2.connect(database='maildb', user='direct')
     except psycopg2.OperationalError as dberr:
         logging.error('Database connection failed: %s', dberr)
         return 1
@@ -80,9 +80,12 @@ def send_message(sender, recipient, message_id, message):
     logging.debug('Recipient domain is trusted: %s', domain)
     logging.debug('Certificate discovery algorithm: %s', dom[3])
 
-    from_key = EVP.load_key('pb1.key', util.passphrase_callback)
-    from_cert = X509.load_cert('pb1.pem')
-    to_cert = find_certificate(recipient, dom[0], dom[3])
+    from_key = 'direct.key' #EVP.load_key('direct.key', util.passphrase_callback)
+    from_cert = 'direct.pem' #X509.load_cert('direct.pem')
+    if dom[3] == 5: #cert_disco_algo = local (cert saved to database)
+        to_cert = dom[2]
+    else:
+        to_cert = find_certificate(recipient, dom[0], dom[3])
 
     if to_cert == None:
         logging.warning('Recipient certificate not found: %s', recipient)
@@ -91,6 +94,10 @@ def send_message(sender, recipient, message_id, message):
     logging.debug('Sending encrypted mail message to: %s', recipient)
     command = ('sendmail', '-f', sender, '--', recipient)
     proc = subprocess.Popen(command, stdin=subprocess.PIPE)
+    proc.stdin.write('From: <%s>\r\n' % sender)
+    proc.stdin.write('To: <%s>\r\n' % recipient)
+    proc.stdin.write('Message-ID: %s\r\n' % message_id)
+
     proc.stdin.write(crypto.to_smime(message, from_key, from_cert, to_cert))
     proc.communicate()
     status = proc.returncode

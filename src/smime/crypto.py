@@ -1,16 +1,23 @@
 #!/usr/bin/env python
 from M2Crypto import BIO, SMIME, X509
+import subprocess
 
 def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128_cbc'):
     try:
         smime = SMIME.SMIME()
-        smime.pkey = sender_key
-        smime.x509 = sender_cert
+        #smime.pkey = sender_key
+        #smime.x509 = sender_cert
     	
-        signature = smime.sign(BIO.MemoryBuffer(message), flags=SMIME.PKCS7_DETACHED)
+        #logging.debug('Signing outgoing message: %s', message_id)
+        command = ('/usr/bin/env', 'openssl', 'cms', '-sign', '-signer', sender_cert , '-inkey', sender_key)
+        proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        proc.stdin.write(message)
+        signature, stderr = proc.communicate()
+
+        #signature = smime.sign(BIO.MemoryBuffer(message), flags=SMIME.PKCS7_DETACHED)
         #init buffer
-        message_signed = BIO.MemoryBuffer()
-        smime.write(message_signed, signature, BIO.MemoryBuffer(message))
+        message_signed = BIO.MemoryBuffer(signature)
+        #smime.write(message_signed, signature, BIO.MemoryBuffer(message))
         cert_stack = X509.X509_Stack()
         #for cert in recipient_certs:
         cert_stack.push(X509.load_cert_der_string(recipient_cert))
@@ -21,10 +28,6 @@ def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128
         message_encrypted = smime.encrypt(message_signed)
 
         out = BIO.MemoryBuffer()
-        #out.write('From: %s\r\n' % sender)
-        #out.write('To: %s\r\n' % string.join(recipients, ", "))
-        #out.write('Subject: %s\r\n' % subject) 
-
         smime.write(out, message_encrypted)
         out.close()
 
@@ -38,8 +41,8 @@ def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128
 
 if __name__ == "__main__":
     from M2Crypto import EVP, util
-    msg = 'Hello there'
-    from_key = EVP.load_key('ubuntu.key', util.passphrase_callback)
-    from_cert = X509.load_cert('ubuntu.crt')
-    to_cert = X509.load_cert('d1.pem')
+    msg = 'Hello world'
+    from_key = EVP.load_key('direct.key', util.passphrase_callback)
+    from_cert = X509.load_cert('direct.pem')
+    to_cert = X509.load_cert('ttt.pem')
     print to_smime(msg, from_key, from_cert, to_cert)
