@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import sys, os, subprocess, email, psycopg2, logging
+import sys, os, subprocess, email, psycopg2, logging, smimesend
+from email.parser import Parser
 from M2Crypto import BIO, SMIME, X509
 
 DATAERR = 65
@@ -18,64 +19,109 @@ def process_message(queue_id, recipient, sender, message):
     pid = os.getpid()
     recipient_cert = CADIR + 'direct.pem'
     recipient_key = CADIR + 'direct.key'
+    message_id = None
+    subject = None
+
+    mail = Parser().parsestr(message, True)
+    if mail['message-id'] != None:
+        message_id = mail['message-id']
+    if mail['subject'] != None:
+        subject = mail['subject']
 
     logging.debug('Decrypting incoming message: %s', queue_id)
     command = ('/usr/bin/env', 'openssl', 'cms', '-decrypt', '-recip', recipient_cert , '-inkey', recipient_key)
     proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    proc.stdin.write(message.read())
+    proc.stdin.write(message)
     msg_sign, stderr = proc.communicate()
     
-    parser = email.Parser.Parser()
-    mail = parser.parsestr(msg_sign)
+    mail = Parser().parsestr(msg_sign)
 
+    is_mdn = False
     for mpart in mail.walk():
-        #print mpart.get_content_type()
-        if mpart.get_content_type() == 'application/pkcs7-signature':
+        if (message_id == None) and (mpart['message-id'] != None):
+            message_id = mail['message-id']
+        if (subject == None) and (mpart['subject'] != None):
+            subject = mail['subject']
+        ct = mpart.get_content_type()
+        if ct == 'message/disposition-notification':
+            is_mdn = True
+        if ct == 'application/pkcs7-signature':
             sig = mpart.get_payload()
             #openssl needs short base64 encoded lines
             if '\n' not in sig:
-                sig = '\n'.join([sig[i:i+77] for i in range(0, len(sig), 77)])
-                mpart.set_payload(sig)
-                msg_sign = mail.as_string().replace('Content-Type: message/rfc822', 'Content-Type:message/rfc822')
+                lsig = sig
+                sig = '\n'.join([sig[i:i+76] for i in range(0, len(sig), 76)])
+                msg_sign = msg_sign.replace(lsig, sig)
+                #sig = '\n'.join([sig[i:i+76] for i in range(0, len(sig), 76)])
+                #mpart.set_payload(sig)
+                #msg_sign = mail.as_string().replace('Content-Type: message/rfc822', 'Content-Type:message/rfc822')
             sig = TEMPLATE % sig
             break
+
     if not verify_sig_cert(sig, sender):
         return None
 
-    #print mail.as_string()
-    #return
     command = ('/usr/bin/env', 'openssl', 'cms', '-verify', '-CApath', CADIR)
     proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     proc.stdin.write(msg_sign)
     stdout, stderr = proc.communicate()
-    print stdout
-    print proc.returncode
+    if proc.returncode != 0:
+        logging.debug('Mail signature validation failed')
+        return None
+
+    return (stdout, is_mdn, message_id, subject)
 
 def save_message(queue_id, recipient, sender, msg_orig, msg_plain):
     conn = psycopg2.connect(database='maildb', user='direct')
     cur = conn.cursor();
-    cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg) VALUES(%s,%s,%s,%s,%s);",(queue_id,recipient,sender,msg_orig.read(),msg_plain.read()))
-    conn.commit() 
+    cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg) VALUES(%s,%s,%s,%s,%s);",(queue_id,recipient,sender,msg_orig,msg_plain))
+    conn.commit()
 
-def send_mdn():
-    return
+def send_mdn(sender, recipient, orig_message_id, subject, msg_plain):
+    import mdn
+    mail = Parser().parsestr(msg_plain, True)
+    subject = mail['subject']
+
+    msg_id, mdn_msg = mdn.make_mdn(sender, recipient, orig_message_id, subject)
+    
+    return smimesend.send_message(sender, recipient, msg_id, mdn_msg)
 
 def verify_sig_cert(sig, sender):
     import certvld
 
     p7 = SMIME.load_pkcs7_bio(BIO.MemoryBuffer(sig))
     certs = p7.get0_signers(X509.X509_Stack())
-    for cert in certs:
-        #print cert.as_text()
-        if not certvld.verify_cert(cert, None, sender):
-            return False
+    if len(certs) == 0:
+        return False
+    if not certvld.verify_cert(certs[0], None, sender):
+        return False
+    if not certvld.verify_binding(certs[0], sender, sender.partition('@')[2], True):
+        return False
     return True
 
 if __name__ == "__main__":
+    logging.basicConfig(format='%(asctime)s pycert[%(process)s]: %(message)s',level=logging.DEBUG,stream=sys.stderr)
     if len(sys.argv) > 1:
         addr =  sys.argv[1]
     queue_id = sys.argv[1]
     recip = sys.argv[2]
     sender = sys.argv[3]
 
-    process_message(queue_id, recip, sender, sys.stdin)
+    orig = sys.stdin.read()
+    retval = process_message(queue_id, recip, sender, orig)
+    if retval == None:
+        logging.debug('Message empty')
+        exit(TEMPFAIL)
+
+    plain = retval[0]
+    is_mdn = retval[1]
+    message_id = retval[2]
+    subject = retval[3]
+
+    if not is_mdn: #not MDN
+        mdn_rc = send_mdn(recip, sender, message_id, subject, plain)
+        if mdn_rc != 0:
+            logging.warning('MDN send failed with code: %s', mdn_rc)
+            exit(mdn_rc)
+
+    save_message(queue_id, recip, sender, orig, plain)
