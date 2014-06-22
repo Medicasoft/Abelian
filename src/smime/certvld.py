@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import M2Crypto as crypto, logging
+TEMPDIR = '/var/spool/direct/tmp/'
 
 def validate(cert, anchor, addr, domain, addressBound = True):
     c = crypto.X509.load_cert_der_string(cert)
@@ -24,16 +25,27 @@ def verify_binding(x509, addr, domain, addressBound):
             subjAltName = ext.get_value().split(':')
             break;
     logging.debug('Verifying certificate binding, subjectAltName: %s', subjAltName)
+
     if addressBound:
         if subjAltName != None:
-            if len(subjAltName) != 2 or subjAltName[0].lower() != 'email' or subjAltName[1].lower() != addr:
+            if len(subjAltName) != 2:
+                logging.log('Certificate binding verification failed: invalid subjectAltName')
+                return False
+            if subjAltName[0].lower() == 'dns' and subjAltName[1].lower() == domain:
+                logging.debug('Certificate binding verification: OK')
+                return True
+            if subjAltName[0].lower() != 'email' or subjAltName[1].lower() != addr:
+                logging.debug('Certificate binding verification failed %s: emailAddress does not match', emailAddress)
                 return False
         if emailAddress != None and emailAddress.lower() != addr:
+            logging.debug('Certificate binding verification failed %s: subjectAltName does not match', emailAddress)
             return False
         if subjAltName != None and emailAddress != None and subjAltName[1].lower() != emailAddress.lower():
+            logging.debug('Certificate binding verification failed %s: subjectAltName and emailAddress does not match', emailAddress)
             return False
     else:
         if subjAltName == None or subjAltName[0].lower() != 'dns' or subjAltName[1].lower() != domain:
+            logging.debug('Certificate binding verification failed %s: subjectAltName does not match', domain)
             return False
     logging.debug('Certificate binding verification: OK')
     return True
@@ -41,13 +53,13 @@ def verify_binding(x509, addr, domain, addressBound):
 def verify_cert(cert, anchor, addr):
     #M2Crypto needs a patch to verify expiration, crl and path so do this for now
     import subprocess
-    certfile = addr.replace('@', '.')
+    certfile = TEMPDIR + addr.replace('@', '.')
     cert.save(certfile, crypto.X509.FORMAT_PEM)
     logging.debug('Verifying certificate expiration, signature, revocation and path: %s', anchor)
-    command = ('/usr/bin/env', 'openssl', 'verify', '-CApath', '/var/spool/direct/ca', addr.replace('@', '.'))
+    command = ('/usr/bin/env', 'openssl', 'verify', '-CApath', '/var/spool/direct/ca', certfile)
     proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
-    if (stderr == "") and (stdout.strip() == "%s: OK" % certfile):
+    if (proc.returncode == 0) and (stdout.strip() == "%s: OK" % certfile):
         return True
-    logging.debug('Chain validation failed:')
+    logging.debug('Validation failed: %s', stdout)
     return False
