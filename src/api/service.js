@@ -5,12 +5,17 @@ var pg = require('pg'),
 	cp = require('child_process'),
 	fs = require('fs'),
 	async = require('async'),
-	uuid = require('node-uuid');
+	uuid = require('node-uuid'),
+    user = require('./user.js'),
+    config = require('./config.js');
 
 var get_messages_qry = 'SELECT * FROM messages;';
 var get_message_qry = 'SELECT * FROM messages WHERE id = $1;';
-var connString = "/var/run/postgresql maildb";
-var port = 8085;
+var del_message_qry = 'DELETE FROM messages WHERE id = $1;';
+
+var connString = config.connString;
+var port = config.port;
+var baseUrl = config.baseUrl;
 
 //REST server
 var server = restify.createServer( { name: 'abelian' });
@@ -21,6 +26,8 @@ server.use(restify.CORS({ origins : ['*'], headers : ['location']}));
 server.get('/Message/:id', getMessage);
 server.get('/Messages', getMessages);
 server.post('/Message', sendMessage);
+server.del('/Message/:id', deleteMessage);
+user.registerRoutes(server);
 
 //start server
 server.listen(port, function() {
@@ -34,21 +41,21 @@ function getMessage(req, res, next) {
 			res.send(500);
 			return next();
 		} else {
-			client.query(get_message_qry, [req.params.id], function(err, result) {
-				done();
-				if(err) {
-					console.error('error running query', err);
-					res.send(500);
-					return next();
-				}
+		    client.query(get_message_qry, [req.params.id], function (err, result) {
+		        done();
+		        if (err) {
+		            console.error('error running query', err);
+		            res.send(500);
+		            return next();
+		        }
 
-				var msg = result.rows[0].msg;
-				res.header('Content-Type', 'application/mime');
-				res.send(200, msg);
-			})
+		        var msg = result.rows[0].msg;
+		        res.header('Content-Type', 'application/mime');
+		        res.send(200, msg);
+		    });
 		}
 	});
-};
+}
 
 function getMessages(req, res, next) {
 	pg.connect(connString, function(err, client, done) {  
@@ -57,35 +64,35 @@ function getMessages(req, res, next) {
 			res.send(500);
 			return next();
 		} else {
-			client.query(get_messages_qry, function(err, result) {
-				done();
-				if(err) {
-					console.error('error running query', err);
-					res.send(500);
-					return next();
-				}
+		    client.query(get_messages_qry, function (err, result) {
+		        done();
+		        if (err) {
+		            console.error('error running query', err);
+		            res.send(500);
+		            return next();
+		        }
 
-				var count = result.rows.length;
-				var msgs = {
-					count : count,
-					messages : []
-				};
-				
-				for(var i = 0; i < count; i++) {
-					var row = result.rows[i];
-					var message = {
-						id : row.id,
-						to : row.recipient //,
-						//size : row.messagesize,
-						//status : row.status
-					}
-					msgs.messages.push(message);
-				}
-				res.send(200, msgs);
-			})
+		        var count = result.rows.length;
+		        var msgs = {
+		            count: count,
+		            messages: []
+		        };
+
+		        for (var i = 0; i < count; i++) {
+		            var row = result.rows[i];
+		            var message = {
+		                id: baseUrl + 'Message/' + row.id, //full GET url
+		                to: row.recipient //,
+		                //size : row.messagesize,
+		                //status : row.status
+		            };
+		            msgs.messages.push(message);
+		        }
+		        res.send(200, msgs);
+		    });
 		}
 	});
-};
+}
 
 function sendMessage(req, res, next) {
 	async.waterfall([
@@ -99,14 +106,14 @@ function sendMessage(req, res, next) {
 	], function(err, result) {
 		err === null ? res.send(200) : res.send(500, err);
 	});
-};
+}
 
 function saveMessage(req, callback) {
-	var meta = {
-		id : uuid.v1(),
-		from : '',
-		to : ''
-	}
+    var meta = {
+        id: uuid.v1(),
+        from: '',
+        to: ''
+    };
 		
 	req.pipe(es.split())
 		.pipe(es.map(function(line, cb){
@@ -131,7 +138,7 @@ function saveMessage(req, callback) {
 	req.on('end', function () { 
 		callback(null, meta);
 	});
-};
+}
 
 function getRecipientCert(meta, callback) {
 	var field = 0,
@@ -165,7 +172,7 @@ function getRecipientCert(meta, callback) {
 		console.log(err);
 		callback(err);
 	});
-};
+}
 
 function encryptMessage(meta, callback) {
 	console.log('encrypt');
@@ -181,11 +188,34 @@ function encryptMessage(meta, callback) {
 			callback(null,meta);
 		});
 	});
-};
+}
 
 function sendMail(meta, callback) {
 	cp.exec('sendmail -f ' + meta.from + ' -- ' + meta.to + ' < ' + meta.id + '.eml', function(err, stdout, stderr) {
 		//if(err === null)
 		   callback(err);
 	});
-};
+}
+
+function deleteMessage(req, res, next) {
+	pg.connect(connString, function(err, client, done) {  
+		if(err) {
+			console.error('error fetching client from pool', err);
+			res.send(500);
+			return next();
+		} else {
+		    client.query(del_message_qry, [req.params.id], function (err, result) {
+		        done();
+		        if (err) {
+		            console.error('error running query', err);
+		            res.send(500);
+		            return next();
+		        }
+
+		        res.send(204); //no content
+		    });
+		}
+	});
+}
+
+
