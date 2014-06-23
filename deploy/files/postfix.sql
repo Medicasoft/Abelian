@@ -31,7 +31,7 @@ ALTER TABLE messages
     OWNER TO direct;
 
     
-CREATE TABLE domains IF NOT EXISTS domains
+CREATE TABLE IF NOT EXISTS domains
 (
   id serial NOT NULL,
   name character varying NOT NULL UNIQUE,
