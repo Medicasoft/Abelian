@@ -37,6 +37,7 @@ def process_message(queue_id, recipient, sender, message):
     mail = Parser().parsestr(msg_sign)
 
     is_mdn = False
+    sig = None
     for mpart in mail.walk():
         if (message_id == None) and (mpart['message-id'] != None):
             message_id = mail['message-id']
@@ -57,6 +58,8 @@ def process_message(queue_id, recipient, sender, message):
                 #msg_sign = mail.as_string().replace('Content-Type: message/rfc822', 'Content-Type:message/rfc822')
             sig = TEMPLATE % sig
             break
+    if sig == None:
+        return None
 
     if not verify_sig_cert(sig, sender):
         return None
@@ -111,7 +114,7 @@ if __name__ == "__main__":
     retval = process_message(queue_id, recip, sender, orig)
     if retval == None:
         logging.debug('Message empty')
-        exit(TEMPFAIL)
+        exit(DATAERR)
 
     plain = retval[0]
     is_mdn = retval[1]
