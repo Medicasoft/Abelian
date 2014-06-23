@@ -3,7 +3,7 @@ from email.message import Message
 import email.utils, time, random
 
 NOTIFICATION = """
-Reporting-UA: ; Abelian\r\nDisposition: automatic-action/MDN-sent-automatically;processed\r\nOriginal-Message-ID: <%s>\r\nFinal-Recipient: rfc822;%s
+Reporting-UA: ; Abelian\r\nDisposition: automatic-action/MDN-sent-automatically;processed\r\nOriginal-Message-ID: %s\r\nFinal-Recipient: rfc822;%s
 """
 
 def make_mdn(sender, recipient, orig_message_id, subject):
