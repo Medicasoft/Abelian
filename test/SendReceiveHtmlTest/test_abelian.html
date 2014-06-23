@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset=“UTF-8”>
+		<title>Abelian | Test API</title>
+        <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+        <script src="scripts/moment.min.js"></script>
+        <script src="scripts/script.js"></script>
+        <link rel="stylesheet" type="text/css" href="css/styles.css">
+	</head>
+	<body>
+        <div id='content'>
+            <div id='messages'>
+                <div id="messageListPane">
+                    <h1>Receive</h1>
+                    <div id="messageListHeader">
+                        Messages<span id="messageCountSpan"></span>
+                        <button id="getMessagesBtn">Reload list</button>  
+                    </div>            
+                    <table id="messagesTable">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>To</th>
+                            </tr>
+                        </thead> 
+                        <tbody>                   
+                        </tbody>
+                    </table>               
+                    
+                </div>                
+                
+                <div id="messagePane">
+                    <h2>Message details for <span id="messageDetailsId"></span></h2>
+                    <div id="messageDetailsBody"></div>                    
+                </div>
+                
+                <div id='clear'></div>
+            </div>
+            
+            <div id="sendPane">
+                <h1>Send</h1>                    
+                    <p>
+                        <input type="radio" id="messageTypeFile" name="messageType" value="file" checked='true'></input> 
+                        <label for="messageTypeFile">Load message from file:</label>
+                        <fieldset id="messageTypeFileFieldset">
+                            <legend>Select file</legend> 
+                            <input type="file" id="messageBodyFile"></input>
+                        </fieldset>
+                    </p>
+                    
+                    <p>
+                        <input type="radio" id="messageTypeText" name="messageType" value="text"></input> <label for="messageTypeText">Input text message:</label>                    
+                        <fieldset id="messageTypeTextFieldset" disabled>
+                            <legend>Message content</legend>                    
+                            <p> 
+                                <label>From:</label>
+                                <input id="from" type="text" length="200" value='from@from.fr'></input>
+                            </p>
+                            <p> 
+                                <label>To:</label> 
+                                <input id="to" type="text" value='to@to.to'></input>                
+                            </p>
+                            <p> 
+                                <label>Content:</label> 
+                                <textarea id="messageBodyText" rows="3">Place your message here</textarea> 
+                            </p>
+                        </fieldset>
+                    </p>
+                    
+                    <p>                    
+                        <button id="sendBtn">Send</button>
+                    </p>           
+            </div> 
+           
+            <div>
+                <h1>Log</h1>
+                <textarea id="sendLog" rows='5'></textarea>
+            </div>
+        </div>
+        
+	</body>
+</html>

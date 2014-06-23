@@ -1,0 +1,107 @@
+ h1 {
+    font-size: 22px;
+    color: #CC3300;
+ }
+ 
+ h2 {
+    font-size: 16px;
+ }
+
+ p { 
+    margin-top: 6px;
+    margin-bottom: 6px;
+ }
+ 
+ button {
+    padding: 5px;
+    margin: 5px;
+ }
+ 
+ /* Overal layout */
+ 
+ #content {
+    width: 50%;
+    margin-left: 25%;
+    margin-right: 25%;
+ }
+ 
+ #content > div {
+    //border: 1px black solid;    
+    margin-bottom: 10px;
+ }
+   
+
+ 
+ 
+ /*Receive pane*/
+  
+ #messagePane {
+    display: none;
+ }
+ 
+ tbody tr:hover {
+    background: lightblue;
+    cursor: pointer;
+ }
+ 
+ 
+ #messageListHeader {
+    font-weight: bold;
+ }
+ 
+ 
+ #messageListHeader button {
+    width: 20%;
+ }
+  
+ table {
+    border-collapse: collapse;
+    width: 100%;
+ }
+ 
+ table, th, td {
+    border: 1px solid black; 
+    text-align: left;    
+ }
+ 
+ 
+ th, td {
+    width: 50%;
+ }
+ 
+ 
+ 
+ #messageDetailsId {
+    font-weight: bold;
+ }
+ 
+ /*Send pane*/
+ 
+ #sendBtn {
+    margin-left: 40%;
+    margin-right: 40%;
+    width: 20%;
+ }
+ 
+ #sendPane input[type=text], #sendPane textarea {
+    width: 400px;
+ }
+
+ 
+ fieldset {
+    margin-left: 30px;
+    margin-bottom: 10px;
+ }
+ 
+ fieldset label {
+    width: 70px;
+    display: inline-block;
+    vertical-align: top;
+ }
+ 
+ /* Log pane */
+ 
+ #sendLog {
+    color: red;
+    width: 100%;
+ }
