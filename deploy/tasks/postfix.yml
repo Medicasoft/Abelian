@@ -21,24 +21,55 @@
    - name: Create postfix database structure
      command: psql -d maildb -c "{{lookup('file', '../files/postfix.sql')}}"
      sudo_user: "{{user}}"
+ 
+   - name: Install python development headers (requirement for python-ldap)
+     apt: name={{item}} state=present
+     with_items: 
+     - python-dev
+     - libldap2-dev
+     - libsasl2-dev 
+     - libssl-dev
+   
+   - name: Install python-ldap (dependencies for Python scripts)
+     pip: name=python-ldap state=present
+
+   - name: Install swig (requirement for M2Crypto)
+     apt: name=swig state=present
+
+   - name: Install M2Crypto (dependencies for Python scripts)
+     pip: name=M2Crypto state=present
+
+   - name: Install other dependencies for Python scripts         
+     pip: name={{item}} state=present
+     with_items:
+        - psycopg2
+        - dnspython
         
    - name: Copy server files to remote node    
-     copy: src=files/{{item}} dest=/var/spool/direct/{{item}}
+     copy: src=../src/smime/{{item}} dest=/var/spool/direct/{{item}}
      with_items: 
-        - rx.sh
-        - to_db
+        - certdisco.py
+        - certvld.py
+        - crypto.py
+        - mdn.py
+        - smimercv.py
+        - smimesend.py
         
    - name: Set file attributes
      file: path=/var/spool/direct/{{item}} group=direct owner=direct mode=770
      with_items: 
-        - rx.sh
-        - to_db
+        - certdisco.py
+        - certvld.py
+        - crypto.py
+        - mdn.py
+        - smimercv.py
+        - smimesend.py
         
    - name: Edit postfix config file and service entries
      command: postconf {{item}}
      with_items:
         - "-e 'mailbox_transport = direct-rx'"
-        - "-M direct-rx/unix='direct-rx unix - n n - - pipe flags=RXq user=direct argv=/var/spool/direct/rx.sh ${queue_id} ${recipient} ${sender}'"
+        - "-M direct-rx/unix='direct-rx unix - n n - - pipe flags=RXq user=direct argv=/var/spool/direct/smimercv.py ${queue_id} ${recipient} ${sender}'"
      notify: 
      - Reload postfix
      

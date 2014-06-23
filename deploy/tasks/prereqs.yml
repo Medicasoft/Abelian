@@ -18,3 +18,6 @@
     - "{{SPOOL}}/crl"
     - "{{SPOOL}}/api"
     - "{{SPOOL}}/tmp"
+
+- name: Install python-pip
+  apt: name=python-pip state=present

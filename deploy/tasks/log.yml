@@ -21,9 +21,6 @@
 - name: Start ES on boot
   command: sudo update-rc.d elasticsearch defaults 95 10
   
-- name: Install python-pip
-  apt: name=python-pip state=present
-  
 - name: Install ES curator  
   pip: name=elasticsearch-curator state=present
   

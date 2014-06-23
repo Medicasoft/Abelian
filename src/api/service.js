@@ -25,7 +25,7 @@ server.use(restify.CORS({ origins : ['*'], headers : ['location']}));
 //routes
 server.get('/Message/:id', getMessage);
 server.get('/Messages', getMessages);
-server.post('/Message', sendMessage);
+server.post('/Message', restify.bodyParser(), sendMessage);
 server.del('/Message/:id', deleteMessage);
 user.registerRoutes(server);
 
@@ -99,102 +99,37 @@ function sendMessage(req, res, next) {
 		function(callback) {
 			callback(null, req);
 		},
-		saveMessage,
-		getRecipientCert,
-		encryptMessage,
-		sendMail
+		saveMessage
 	], function(err, result) {
-		err === null ? res.send(200) : res.send(500, err);
+		if(err === null) {	 
+            console.log('smimesend.py successfully sent a message');        
+			res.send(200);
+			return;
+		}
+        console.error('smimesend.py error:' + err);   
+        
+		if(err.code === 2) {
+			res.send(400, 'Mail headers missing');
+			return;
+		}
+		if(err.code === 1) {
+			res.send(422, 'Validation failed');
+			return;
+		}
+		
+		res.send(500, err);		
 	});
 }
 
 function saveMessage(req, callback) {
-    var meta = {
-        id: uuid.v1(),
-        from: '',
-        to: ''
-    };
-		
-	req.pipe(es.split())
-		.pipe(es.map(function(line, cb){
-			if(meta.to === ''){
-				var m = line.match(/^to:[^<]*<(.+)>$/i);
-				if(m !== null){
-					meta.to = m[1];
-				}
-			}
-			if(meta.from === ''){
-				m = line.match(/^from:[^<]*<(.+)>$/i);
-				if(m !== null){
-					meta.from = m[1];
-				}
-			}
-
-			cb(null, line);
-		}))
-		.pipe(es.join('\n'))
-		.pipe(fs.createWriteStream(meta.id + '.msg'));
-	
-	req.on('end', function () { 
-		callback(null, meta);
-	});
-}
-
-function getRecipientCert(meta, callback) {
-	var field = 0,
-	    modulus = 0;
-	var ws = fs.createWriteStream(meta.id + '.crt');
-	
-	ws.on('open',function() {
-		es.child(cp.exec('dig CERT +short ' + meta.to.replace('@', '.')))
-			.pipe(es.split(' '))
-			.pipe(es.through(
-				function write(line) {
-					if(field === 1)
-						modulus = +line;
-					if(field === 2)
-						this.emit('data', '-----BEGIN CERTIFICATE-----');
-					if(field > 2)
-						this.emit('data', '\n' + line);
-					field++;
-			}, 	function end() {
-					this.emit('data', '-----END CERTIFICATE-----');
-					this.emit('end');
-			}))
-			.pipe(ws);
-	});
-		
-	ws.on('finish', function() {console.log('finish');
-		callback(null, meta);
-	});
-	
-	ws.on('error', function(err) {
-		console.log(err);
+    var child = cp.exec('smimesend.py', {cwd: '../smime/' }, function(err, stdout, stderr) {
+        if(stderr !== '')
+            console.error('smimesend.py stderr: ' + stderr);
+       
 		callback(err);
 	});
-}
-
-function encryptMessage(meta, callback) {
-	console.log('encrypt');
-	var cmd = 'openssl smime -sign -in ' + meta.id + '.msg -signer my.pem -inkey my.key | ' +
-			  'openssl smime -encrypt -out ' + meta.id + '.eml ' + meta.id + '.crt';
-			  
-	cp.exec(cmd, function(err, stdout, stderr) {
-		if(err !== null) {
-		  callback(err);
-		  return;
-		}
-		cp.exec('echo ".\n" >> ' + meta.id + '.eml', function(er,sto,ste){
-			callback(null,meta);
-		});
-	});
-}
-
-function sendMail(meta, callback) {
-	cp.exec('sendmail -f ' + meta.from + ' -- ' + meta.to + ' < ' + meta.id + '.eml', function(err, stdout, stderr) {
-		//if(err === null)
-		   callback(err);
-	});
+    child.stdin.write(req.body);
+	child.stdin.end();
 }
 
 function deleteMessage(req, res, next) {
@@ -219,3 +154,4 @@ function deleteMessage(req, res, next) {
 }
 
 
+

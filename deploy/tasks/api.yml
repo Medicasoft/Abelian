@@ -15,7 +15,7 @@
   npm: path={{SPOOL}}/api
     
 - name: Set Node.js app as Upstart service
-  template: src=templates/direct.j2 dest=/etc/init/direct.conf
+  template: src=templates/direct.conf.j2 dest=/etc/init/direct.conf
   
 - name: Start Node.js service
   service: name=direct state=started  

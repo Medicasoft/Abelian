@@ -8,12 +8,18 @@
   -  name: Generate server certificates for mail root - direct.key
      command: openssl genrsa -out "{{SPOOL}}/ca/direct.key" 2048
 
+  -  name: Copy req_ext configuration template
+     template: src=templates/req_ext.conf.j2 dest={{SPOOL}}/ca/req_ext.conf
+    
   -  name: Generate server certificates for mail root - direct.csr
-     command: openssl req -new -subj "/CN={{MAIL_DOMAIN}}" -key "{{SPOOL}}/ca/direct.key" -out "{{SPOOL}}/ca/direct.csr"
+     command: openssl req -new -subj "/CN={{MAIL_DOMAIN}}" -key "{{SPOOL}}/ca/direct.key" -out "{{SPOOL}}/ca/direct.csr" -config "{{SPOOL}}/ca/req_ext.conf"
 
   -  name: Generate server certificates for mail root - direct.pem
-     command: openssl x509 -req -days 365 -in "{{SPOOL}}/ca/direct.csr" -CA "{{SPOOL}}/ca/ca.pem" -CAkey "{{SPOOL}}/ca/ca.key" -set_serial 1 -out "{{SPOOL}}/ca/direct.pem" -setalias "Self Signed SMIME" -addtrust emailProtection -addreject clientAuth -addreject serverAuth -trustout
+     command: openssl x509 -req -days 365 -in "{{SPOOL}}/ca/direct.csr" -CA "{{SPOOL}}/ca/ca.pem" -CAkey "{{SPOOL}}/ca/ca.key" -set_serial 1 -out "{{SPOOL}}/ca/direct.pem" -setalias "Self Signed SMIME" -addtrust emailProtection -addreject clientAuth -addreject serverAuth -trustout -extfile "{{SPOOL}}/ca/req_ext.conf" -extensions v3_ext
 
+  -  name: Remove req_ext configuration file
+     file: path={{SPOOL}}/ca/req_ext.conf state=absent
+  
   -  name: Fetch the generated ca.pem
      fetch: src={{SPOOL}}/ca/ca.pem dest=certificates
 
