@@ -26,5 +26,9 @@
     "async": "~0.9.0",
     "event-stream": "~3.1.5",
     "node-uuid": "~1.4.1"
+  },
+  "devDependencies": {
+    "chai": "*",
+    "mocha": "*" 
   }
 }
