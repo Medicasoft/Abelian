@@ -14,4 +14,4 @@
   service: name=nginx state=restarted
 
 - name: Reload postgres
-  service: name=postgres state=reloaded
+  service: name=postgresql state=reloaded
