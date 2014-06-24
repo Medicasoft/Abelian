@@ -17,7 +17,7 @@ def add_multiple_users(fp):
 def add_single_user(user):
     conn = psycopg2.connect(database='maildb', user='direct')
     cur = conn.cursor();
-    cur.execute("INSERT INTO users(address) VALUES(%s);", (user,))
+    cur.execute("INSERT INTO users(address,active) VALUES(%s,%s);", (user,'t'))
     conn.commit()
 
 if len(sys.argv) == 1:
