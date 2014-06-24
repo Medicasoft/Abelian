@@ -1,0 +1,48 @@
+#!/usr/bin/python
+import sys,psycopg2
+
+def print_help():
+    print 'Add direct user. Usage:'
+    print ' direct_add_user user@domain Add single user'
+    print ' direct_add_user <file> Add multiple users from file. Separator is \n'
+    exit(0)
+
+def add_multiple_users(fp):
+    count = 0
+    for user in sys.stdin:
+        add_single_user(user)
+        count += 1
+    return count
+
+def add_single_user(user):
+    conn = psycopg2.connect(database='maildb', user='direct')
+    cur = conn.cursor();
+    cur.execute("INSERT INTO users(address) VALUES(%s);", (user,))
+    conn.commit()
+
+if len(sys.argv) == 1:
+    count = add_multiple_users(sys.stdin)
+    if count > 0:
+        print 'Added %s users' % count
+        exit(0)
+    else:
+        print_help()
+        exit(0)
+
+if sys.argv[1] == '-h':
+    print_help()
+    exit(0)
+
+user = sys.argv[1]
+if '@' in user:
+    add_single_user(user)
+    print 'Added 1 user'
+    exit(0)
+else:
+    count = add_multiple_users(sys.stdin)
+    if count > 0:
+        print 'Added %s users' % count
+        exit(0)
+    else:
+        print_help()
+        exit(0)
