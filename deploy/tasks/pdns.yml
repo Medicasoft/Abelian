@@ -25,6 +25,6 @@
      file: name={{TEMP_SQL_PATH}}/pdns_db.sql state=absent
 
 
-   - name: Configure pdnssec
-     command: pdnssec rectify-zone {{DOMAIN}}
+   #- name: Configure pdnssec
+   #  command: pdnssec rectify-zone {{DOMAIN}}
 
