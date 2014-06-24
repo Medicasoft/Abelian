@@ -11,6 +11,9 @@
 - name: Deploy API files
   copy: src=../src/api/ dest={{SPOOL}}/api/
 
+- name: Copy API config file
+  template: src=templates/config.js.j2 dest={{SPOOL}}/api/config.js
+  
 - name: Install the required Node.js packages
   npm: path={{SPOOL}}/api
     

@@ -1,8 +1,8 @@
 ﻿var port = 8085;
-var baseUrl = "http://localhost:" + port + "/";
-if(!/\/$/.test(baseUrl)) //ensure it ends with '/' 
+var baseUrl = "{{API_BASE_URL}}";
+if(!/\/$/.test(baseUrl)) //add ending '/' if not exists
     baseUrl += '/';
-    
+
 module.exports = {
     connString: "/var/run/postgresql maildb",
     port: port,

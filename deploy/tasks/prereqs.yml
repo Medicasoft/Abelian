@@ -26,6 +26,9 @@
 - name: Set execute permissions
   file: path={{SPOOL}}/tools/ recurse=yes owner=direct mode=744
 
+- name: Create .bash_profile file
+  file: path=~direct/.bash_profile state=touch
+
 - name: Add {{SPOOL}}/tools folder to PATH for direct user
   lineinfile: dest=~direct/.bash_profile line='{{item}}' state=present 
   with_items:

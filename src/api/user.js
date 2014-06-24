@@ -166,7 +166,7 @@ function getEntities(req, res, next, type) {
                     var row = result.rows[i];
                     var entity = entityToJson(row);
                     entities.entry.push({
-                        id: baseUrl +  type + '/' + entity.id,
+                        id: entity.id,
                         content: entity.content
                     });
                 }

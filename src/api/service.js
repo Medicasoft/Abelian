@@ -74,8 +74,8 @@ function getMessages(req, res, next) {
 
 		        var count = result.rows.length;
 		        var msgs = {
-		            count: count,
-		            messages: []
+		            totalResults: count,
+		            entry: []
 		        };
 
 		        for (var i = 0; i < count; i++) {
@@ -86,7 +86,7 @@ function getMessages(req, res, next) {
 		                //size : row.messagesize,
 		                //status : row.status
 		            };
-		            msgs.messages.push(message);
+		            msgs.entry.push(message);
 		        }
 		        res.send(200, msgs);
 		    });

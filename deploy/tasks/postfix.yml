@@ -68,8 +68,26 @@
    - name: Create pgsql directory
      file: path=/etc/postfix/pgsql state=directory
   
+   - name: Add postfix user to maildb
+     postgresql_user: name=postfix state=present password={{DIRECT_PASSWORD}} db=maildb role_attr_flags=LOGIN
+     sudo_user: "{{user}}"
+   
+   - name: Grant select priviledges to user
+     postgresql_privs: database=maildb roles=postfix schema=public type=table objs=ALL_IN_SCHEMA grant_option=yes state=present priv=SELECT
+     sudo_user: "{{user}}"
+  
+   - name: Set authentication method for postfix
+     lineinfile: dest=/etc/postgresql/9.3/main/pg_hba.conf 
+       regex='(# Put your actual configuration here\n# -*\n)(local   maildb          postfix                                 password)?' 
+       backrefs=yes 
+       state=present 
+       line='\1local   maildb          postfix                                 password'     
+
+     notify: 
+     - Reload postgres
+  
    - name: Add virtual maps
-     copy: src=files/{{item}} dest=/etc/postfix/pgsql/{{item}}
+     template: src=templates/{{item}} dest=/etc/postfix/pgsql/{{item}}
      with_items:
         - virtual_mailbox_maps.cf
         - virtual_mailbox_domains.cf
