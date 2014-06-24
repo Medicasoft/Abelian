@@ -1,5 +1,19 @@
-- name: Install openjdk7-jdk
-  apt: name=openjdk-7-jdk state=present force=yes
+- name: Install JDK dependencies
+  apt: name=python-software-properties state=present
+
+- name: Add JDK repository  
+  apt_repository: repo=ppa:webupd8team/java state=present
+
+- name: Configure JDK installer
+  debconf: name=oracle-java7-installer question="{{item.question}}" value="{{item.value}}" vtype='select' unseen=no
+  with_items:
+   - { question: 'shared/accepted-oracle-license-v1-1', value: "true" }
+
+- name: Install jdk
+  apt: name=oracle-java7-installer state=present
+    
+# - name: Install openjdk7-jdk
+#   apt: name=openjdk-7-jdk state=present force=yes
 
 - name: Create directory for elasticsearch
   file: path=/opt/elasticsearch state=directory

@@ -65,6 +65,9 @@
         - smimercv.py
         - smimesend.py
    
+   - name: Create pgsql directory
+     file: path=/etc/postfix/pgsql state=directory
+  
    - name: Add virtual maps
      copy: src=files/{{item}} dest=/etc/postfix/pgsql/{{item}}
      with_items:
