@@ -1,0 +1,3 @@
+user = direct
+dbname = maildb
+query = SELECT 1 FROM domains WHERE name = '%s' AND active = 't' AND is_local = 't';

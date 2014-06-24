@@ -1,0 +1,3 @@
+user = direct
+dbname = maildb
+query = SELECT 1 FROM users WHERE address = '%s' AND active = 't';

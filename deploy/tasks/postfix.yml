@@ -64,11 +64,21 @@
         - mdn.py
         - smimercv.py
         - smimesend.py
-        
+   
+   - name: Add virtual maps
+     copy: src=files/{{item}} dest=/etc/postfix/pgsql/{{item}}
+     with_items:
+        - virtual_mailbox_maps.cf
+        - virtual_mailbox_domains.cf
+     
    - name: Edit postfix config file and service entries
      command: postconf {{item}}
      with_items:
+        - "-e 'mydestination = localhost'"
         - "-e 'mailbox_transport = direct-rx'"
+        - "-e 'virtual_transport = direct-rx'"
+        - "-e 'virtual_mailbox_domains = {{MAIL_DOMAIN}}'"
+        - "-e 'virtual_mailbox_maps = pgsql:/etc/postfix/pgsql/virtual_mailbox_maps.cf'"
         - "-M direct-rx/unix='direct-rx unix - n n - - pipe flags=RXq user=direct argv=/var/spool/direct/smimercv.py ${queue_id} ${recipient} ${sender}'"
      notify: 
      - Reload postfix

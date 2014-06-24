@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users
   id serial NOT NULL,
   address character varying NOT NULL UNIQUE,
   certificate bytea,
+  active boolean,
   CONSTRAINT pk PRIMARY KEY (id)
 )
 WITH (
@@ -39,6 +40,8 @@ CREATE TABLE IF NOT EXISTS domains
   crl_path character varying,
   crypt_cert bytea,
   cert_disco_algo integer NOT NULL DEFAULT 0,
+  active boolean DEFAULT 't',
+  is_local boolean DEFAULT 'f',
   CONSTRAINT domains_pk PRIMARY KEY (id)
 )
 WITH (
