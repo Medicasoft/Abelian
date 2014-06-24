@@ -77,11 +77,11 @@
      sudo_user: "{{user}}"
   
    - name: Set authentication method for postfix
-     lineinfile: dest=/etc/postgresql/9.3/main/pg_hba.conf 
-       regex='(# Put your actual configuration here\n# -*\n)(local   maildb          postfix                                 password)?' 
-       backrefs=yes 
-       state=present 
-       line='\1local   maildb          postfix                                 password'     
+     lineinfile: dest=/etc/postgresql/9.3/main/pg_hba.conf            
+           regexp='(# Put your actual configuration here\n)(local   maildb          postfix                                 password)?'
+           backrefs=yes 
+           state=present 
+           line='\1local   maildb          postfix                                 password'         
 
      notify: 
      - Reload postgres

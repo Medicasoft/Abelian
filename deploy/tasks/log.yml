@@ -55,8 +55,8 @@
      
 - name: Copy Logstash Init Script
   copy: src=config/logstash/logstash dest=/etc/init.d/logstash  
-  notify: 
-    - Restart logstash
+  #notify: 
+  #  - Restart logstash
     
 - name: Set Logstash Init Script permissions 
   file: path=/etc/init.d/logstash mode=770
@@ -69,15 +69,15 @@
   
 - name: Copy Logstash configuration file
   copy: src=../src/log/logstash/server.conf dest=/etc/logstash
-  notify: 
-    - Restart logstash
+  #notify: 
+  #  - Restart logstash
     
 - name: Copy Logstash configuration files
   copy: src={{item}} dest=/opt/logstash/patterns/
   with_fileglob:
     - ../src/log/logstash/grok/*.grok        
-  notify: 
-    - Restart logstash
+  #notify: 
+  #  - Restart logstash
     
 #TODO # Logrotate job for logstash
 
