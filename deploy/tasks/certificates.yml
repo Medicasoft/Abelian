@@ -2,7 +2,7 @@
      command: openssl genrsa -out "{{SPOOL}}/ca/ca.key" 2048
 
   -  name: Generate server certificates for ca - ca.pem        
-     command: openssl req -new -x509 -days 365 -subj "/CN={{DOMAIN}}" -key "{{SPOOL}}/ca/ca.key" -out "{{SPOOL}}/ca/ca.pem"
+     command: openssl req -new -x509 -days 365 -subj "/CN={{DOMAIN}}_ca" -key "{{SPOOL}}/ca/ca.key" -out "{{SPOOL}}/ca/ca.pem"
 
 
   -  name: Generate server certificates for mail root - direct.key
