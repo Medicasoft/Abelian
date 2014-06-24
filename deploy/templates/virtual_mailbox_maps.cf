@@ -1,4 +1,4 @@
-user = direct
-password = {{DIRECT_PASSWORD}}
+user = postfix
+password = {{POSTFIX_PASSWORD}}
 dbname = maildb
 query = SELECT 1 FROM users WHERE address = '%s' AND active = 't';

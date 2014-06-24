@@ -69,7 +69,7 @@
      file: path=/etc/postfix/pgsql state=directory
   
    - name: Add postfix user to maildb
-     postgresql_user: name=postfix state=present password={{DIRECT_PASSWORD}} db=maildb role_attr_flags=LOGIN
+     postgresql_user: name=postfix state=present password={{POSTFIX_PASSWORD}} db=maildb role_attr_flags=LOGIN
      sudo_user: "{{user}}"
    
    - name: Grant select priviledges to user
