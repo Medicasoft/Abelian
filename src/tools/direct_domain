@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+import argparse, psycopg2
+
+def get_cert(path):
+    import M2Crypto as crypto
+    with open(path, 'rb') as fp:
+        cert = fp.read()
+        if cert.startswith('-----BEGIN'):
+            return crypto.X509.load_cert_string(cert).as_der()
+        else:
+            return cert
+
+algorithms = ['hybrid', 'address_cert', 'domain_cert', 'address_ldap', 'domain_ldap', 'local']
+parser = argparse.ArgumentParser()
+parser.add_argument('cmd', choices = ['add', 'set_cert_algo', 'inactivate', 'activate', 'remove'])
+parser.add_argument('-d', '--domain', required = True)
+parser.add_argument('-a', '--algorithm', choices = algorithms, default = 'hybrid')
+parser.add_argument('-c', '--certificate')
+parser.add_argument('-t', '--type', choices = ['local', 'remote'], default = 'local')
+
+parms = parser.parse_args()
+
+algo = algorithms.index(parms.algorithm)
+cert = psycopg2.Binary(get_cert(parms.certificate)) if parms.certificate != None else None
+local = (parms.type == 'local')
+
+conn = psycopg2.connect(database='maildb', user='direct')
+cur = conn.cursor();
+if parms.cmd == 'add':
+    cur.execute("INSERT INTO domains(name,cert_disco_algo,crypt_cert,is_local) VALUES(%s,%s,%s,%s);",(parms.domain,algo,cert,local))
+elif parms.cmd == 'activate':
+    cur.execute("UPDATE domains SET active = 't' WHERE name = %s;", (parms.domain,))
+elif parms.cmd == 'inactivate':
+    cur.execute("UPDATE domains SET active = 'f' WHERE name = %s;", (parms.domain,))
+elif parms.cmd == 'remove':
+    cur.execute("DELETE FROM domains WHERE name = %s;", (parms.domain,))
+elif parms.cmd == 'set_cert_algo':
+    if (parms.algorithm == 'local') and (cert == None):
+        print 'Certificate required for <local> discovery algorithm'
+        exit(2)
+    cur.execute("UPDATE domains SET cert_disco_algo = %s, crypt_cert = %s WHERE name = %s;", (algo, cert, parms.domain))
+conn.commit()
