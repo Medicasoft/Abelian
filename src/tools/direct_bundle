@@ -1,54 +1,57 @@
 #!/usr/bin/env python
-import sys, os, glob #, psycopg2
-from subprocess import Popen
-import M2Crypto as crypto
+import argparse, urllib, sys, os, subprocess, anchorlib
 
-CADIR = '/var/spool/direct/ca/'
+CADIR = '/var/spool/direct/ca'
+TEMPDIR = '/var/spool/direct/tmp'
 
-def add_anchor(anchor):
-    cert = crypto.X509.load_cert_string(anchor)
-    subject_hash = hex(cert.get_subject().as_hash())[2:-1]
-    fingerprint = cert.get_fingerprint()
-    #fname = '%s.0' % subject_hash
-    ext = -1
-    for fname in glob.glob(os.path.join(CADIR, '%s.?.pem' % subject_hash)):
-        print fname
-        if fingerprint == crypto.X509.load_cert(fname).get_fingerprint():
-            return
-        print fname, fname.split('.')[2]
-        ext = max(ext, int(fname.split('.')[1]))
+parser = argparse.ArgumentParser(description = 'Import trust bundle')
+parser.add_argument('cmd', choices = ['add', 'remove'])
+parser.add_argument('-d', '--domain', required = True)
+parser.add_argument('-f', '--file')
+parser.add_argument('-u', '--url')
 
-    print '%s.%d' % (subject_hash, ext+1), cert.get_subject()
-    with open(os.path.join(CADIR, '%s.%d.pem' % (subject_hash, ext+1)), 'w') as cert_file:
-        cert_file.write(anchor)
-    return
+parms = parser.parse_args()
+store = os.path.join(CADIR, parms.domain.lower())
 
-domain = sys.argv[1]
-bundle = sys.argv[2]
+if not os.path.isdir(store):
+    os.mkdir(store, 0770)
 
-certs_file = '%d.pem' % os.getpid()
+bundle = None
+if parms.file != None:
+    bundle = open(parms.file, 'rb')
+elif parms.url != None:
+    bundle = urllib.urlopen(parms.url)
+else:
+    bundle = sys.stdin
 
-with open(bundle, 'rb') as fp:
-    start = fp.read(10)
+certs_file = os.path.join(TEMPDIR, '%d.pem' % os.getpid())
+
+try:
+    start = bundle.read(10)
     inform = 'pkcs7' if start == '-----BEGIN' else 'der'
-    print inform
-    fp.close()
-    ssl = Popen(['openssl', 'cms', '-cmsout', '-noout', '-in', bundle, '-inform', inform, '-certsout', certs_file])
+
+    ssl = subprocess.Popen(['openssl', 'cms', '-cmsout', '-noout', '-inform', inform, '-certsout', certs_file], stdin = subprocess.PIPE)
+    ssl.stdin.write(start)
+    ssl.stdin.write(bundle.read())
     ssl.communicate()
     if ssl.returncode != 0:
         exit(ssl.returncode)
 
-with open(certs_file, 'r') as fp:
-    cert = ''
-    for line in fp:
-        if line == '-----BEGIN CERTIFICATE-----\n':
-            cert = line
-        elif line == '-----END CERTIFICATE-----\n':
-            cert += line
-            add_anchor(cert)
-        else:
-            cert += line
+    with open(certs_file, 'r') as fp:
+        cert = ''
+        for line in fp:
+            if line == '-----BEGIN CERTIFICATE-----\n':
+                cert = line
+            elif line == '-----END CERTIFICATE-----\n':
+                cert += line
+                if parms.cmd == 'add':
+                    anchorlib.add_anchor(cert, store, False)
+                elif parms.cmd == 'remove':
+                    anchorlib.remove_anchor(cert, store, False)
+            else:
+                cert += line
 
-rehash = Popen(['c_rehash', CADIR + domain])
-rehash.communicate()
-exit(rehash.returncode)
+    exit(anchorlib.rehash_store(store))
+finally:
+    if os.path.isfile(certs_file):
+        os.remove(certs_file)

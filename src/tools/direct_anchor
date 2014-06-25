@@ -1,74 +1,26 @@
 #!/usr/bin/python
-import argparse, base64, psycopg2
-from subprocess import call
+import argparse, sys, os, glob, subprocess, anchorlib
 
-CADIR = '/var/spool/direct/ca/'
+CADIR = '/var/spool/direct/ca'
 
-def add_anchor(domain, path, form):
-   rval = call(['cp', path, '%s%s.pem' % (CADIR, domain)])
-   if rval != 0:
-       exit(rval)
-   rval = call(['c_rehash', CADIR])
-   if rval != 0:
-       exit(rval)
-
-def get_cert(domain, path, form):
-    fp = open(path, 'rb')
-    der = None
-    if form.lower() == 'pem':
-        pem = ''
-        for line in fp:
-            line = line.replace('\n', '')
-            if line == '-----BEGIN CERTIFICATE-----':
-                continue
-            if line == '-----END CERTIFICATE-----':
-                continue
-            pem += line
-        der = base64.b64decode(pem)
-    else:
-        der = fp.read()
-
-    return der
-
-def save_domain(domain, algo, cert):
-    conn = psycopg2.connect(database='maildb', user = 'direct')
-    id = 0
-    cur = conn.cursor()
-    cur.execute("SELECT id FROM domains WHERE name = %s;", (domain,))
-    dom = cur.fetchone()
-    if dom != None:
-        id = dom[0]
-        #if (cert == None) and (algo != None):
-        #    cur.execute("UPDATE domains SET cert_disco_algo=%s;", (algo,))
-        #else:
-        if cert != None:
-            cur.execute("UPDATE domains SET cert_disco_algo=%s,crypt_cert=%s;", (5, psycopg2.Binary(cert)))
-    else:
-        if cert != None:
-            cur.execute("INSERT INTO domains(name,cert_disco_algo,crypt_cert) VALUES(%s,%s,%s);",(domain,5,psycopg2.Binary(cert)))
-        else:
-            cur.execute("INSERT INTO domains(name) VALUES(%s);",(domain,))
-    conn.commit()
-    
 parser = argparse.ArgumentParser(description = 'Import trust anchor')
-parser.add_argument('-domain')
-parser.add_argument('-anchor')
-parser.add_argument('-anchor_form', default = 'pem')
-parser.add_argument('-cert')
-parser.add_argument('-cert_form', default = 'pem')
+parser.add_argument('cmd', choices = ['add', 'remove'])
+parser.add_argument('-d', '--domain', required = True)
+parser.add_argument('-f', '--file')
 
-prms = parser.parse_args()
+parms = parser.parse_args()
 
-if prms.domain == None:
-    print 'Domain is required'
-    exit(1)
-domain = prms.domain.lower()
+store = os.path.join(CADIR, parms.domain.lower())
+if not os.path.isdir(store):
+    os.mkdir(store, 0770)
 
-if prms.anchor != None:
-    add_anchor(domain, prms.anchor, prms.anchor_form)
+anchor = None
+if parms.file != None:
+    anchor = open(parms.file, 'rb').read()
+else:
+    anchor = sys.stdin.read()
 
-cert = None
-if prms.cert != None:
-    cert = get_cert(domain, prms.cert, prms.cert_form)
-
-save_domain(domain, 0,cert)
+if parms.cmd == 'add':
+    anchorlib.add_anchor(anchor, store)
+elif parms.cmd == 'remove':
+    anchorlib.remove_anchor(anchor, store)
