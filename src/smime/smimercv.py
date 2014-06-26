@@ -62,6 +62,11 @@ def process_message(queue_id, recipient, sender, message):
                 #sig = '\n'.join([sig[i:i+76] for i in range(0, len(sig), 76)])
                 #mpart.set_payload(sig)
                 #msg_sign = mail.as_string().replace('Content-Type: message/rfc822', 'Content-Type:message/rfc822')
+            if sig.endswith('\r\n'):
+                sig = sig.rstrip('\r\n')
+            if sig.endswith('\n'):
+                sig = sig.rstrip('\n')
+
             sig = TEMPLATE % sig
             break
     if sig == None:
