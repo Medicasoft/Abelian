@@ -111,8 +111,14 @@ def send_message(sender, recipient, message_id, message):
     return status
 
 if __name__ == "__main__":
-    import email,sys
-    logging.basicConfig(format='%(asctime)s pycert[%(process)s]: %(message)s',level=logging.DEBUG,stream=sys.stderr)
+    import email,sys,platform, logging.handlers
+
+    logging.basicConfig(level=logging.DEBUG,stream=sys.stderr)
+    err = logging.handlers.SysLogHandler(address='/dev/log',facility=logging.handlers.SysLogHandler.LOG_MAIL)
+    err.setLevel(logging.DEBUG)
+    err.setFormatter(logging.Formatter('%(asctime)s ' + platform.node() + ' direct/send[%(process)s]: %(message)s'))
+    logging.getLogger('').addHandler(err)
+
     parser = email.Parser.Parser()
     eml = sys.stdin.read()
     msg = parser.parsestr(eml, True)

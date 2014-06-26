@@ -103,7 +103,14 @@ def verify_sig_cert(sig, sender):
     return True
 
 if __name__ == "__main__":
-    logging.basicConfig(format='%(asctime)s pycert[%(process)s]: %(message)s',level=logging.DEBUG,stream=sys.stderr)
+    import logging.handlers,platform
+
+    logging.basicConfig(level=logging.DEBUG,stream=sys.stderr)
+    err = logging.handlers.SysLogHandler(address='/dev/log',facility=logging.handlers.SysLogHandler.LOG_MAIL)
+    err.setLevel(logging.DEBUG)
+    err.setFormatter(logging.Formatter('%(asctime)s ' + platform.node() + ' direct/receive[%(process)s]: %(message)s'))
+    logging.getLogger('').addHandler(err)
+
     if len(sys.argv) > 1:
         addr =  sys.argv[1]
     queue_id = sys.argv[1]
