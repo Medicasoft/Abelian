@@ -24,7 +24,7 @@
   copy: src=../src/tools/ dest={{SPOOL}}/tools/
 
 - name: Set execute permissions
-  file: path={{SPOOL}}/tools/ recurse=yes owner=direct mode=744
+  file: path={{SPOOL}}/tools/ recurse=yes owner=direct mode=744 state=directory
 
 - name: Create .bash_profile file
   file: path=~direct/.bash_profile state=touch

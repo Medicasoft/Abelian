@@ -49,6 +49,10 @@ WITH (
   OIDS=FALSE
 );
 
+
+ALTER TABLE domains
+OWNER TO direct;
+    
 CREATE TABLE IF NOT EXISTS bundles
 (
   id serial NOT NULL,
