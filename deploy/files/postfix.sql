@@ -41,8 +41,9 @@ CREATE TABLE IF NOT EXISTS domains
   crypt_cert bytea,
   cert_disco_algo integer NOT NULL DEFAULT 0,
   active boolean DEFAULT 't',
-  is_local boolean DEFAULT 'f',
-  CONSTRAINT domains_pk PRIMARY KEY (id)
+  is_local boolean DEFAULT 't',
+  CONSTRAINT domains_pk PRIMARY KEY (id),
+  CONSTRAINT domains_unique_name UNIQUE (name)
 )
 WITH (
   OIDS=FALSE
