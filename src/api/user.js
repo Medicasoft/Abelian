@@ -1,9 +1,14 @@
 ﻿var restify = require('restify'),
     pg = require('pg'),
+    fs = require('fs'),
+    cp = require('child_process'),
+    guid = require('node-uuid'),
     config = require('./config.js');
 
 var connString = config.connString;
 var baseUrl = config.baseUrl;
+var tempPath = '/var/spool/direct/tmp/';
+var toolsPath = '/var/spool/direct/tools/';
 
 var resources = {
     user: {
@@ -19,10 +24,10 @@ var resources = {
     domain: {
         queries: {
             list: 'SELECT * FROM domains;',
-            get: 'SELECT * FROM domains WHERE id=$1;',
-            create: 'INSERT INTO domains(name, anchor_path, crl_path, crypt_cert, cert_disco_algo) VALUES ($1, $2, $3, $4, $5) RETURNING id;',
-            update: 'UPDATE domains SET name=$2, anchor_path=$3, crl_path=$4, crypt_cert=$5, cert_disco_algo=$6 WHERE id=$1;',
-            delete: 'DELETE FROM domains WHERE id = $1;'
+            get: 'SELECT * FROM domains WHERE id=$1;'
+ //           create: 'INSERT INTO domains(name, anchor_path, crl_path, crypt_cert, cert_disco_algo) VALUES ($1, $2, $3, $4, $5) RETURNING id;',
+ //           update: 'UPDATE domains SET name=$2, anchor_path=$3, crl_path=$4, crypt_cert=$5, cert_disco_algo=$6 WHERE id=$1;',
+ //           delete: 'DELETE FROM domains WHERE id = $1;'
         },
         toJson: domainToJson
     }
@@ -42,7 +47,7 @@ function registerRoutes(server) {
     server.get('/Domains', getDomains);
     server.get('/Domain/:id', getDomain);
     server.post('/Domain', restify.bodyParser(), createDomain);
-    server.put('/Domain/:id', restify.bodyParser(), updateDomain);
+//    server.put('/Domain/:id', restify.bodyParser(), updateDomain);
     server.del('/Domain/:id', deleteDomain);
 } 
 
@@ -82,15 +87,71 @@ function getDomain (req, res, next) {
     getEntity(req, res, next, 'Domain');
 }
 function createDomain (req, res, next) {
-    executeSql(req, res, next, 'Domain', 'create',
-        [req.body.name, req.body.anchor_path, req.body.crl_path, req.body.crypt_cert, req.body.cert_disco_algo], 201);
+	var filepath = tempPath + guid.v4() + '.tmp';
+	fs.writeFile(filepath, req.body.crypt_cert,function(err) {
+		if (err) {
+			console.error('Error writing temporary file: ' + err);
+			res.send(500, err);
+			return next();
+		}
+		var child = cp.exec(toolsPath + 'direct_domain -d ' + req.body.name + ' -a ' +
+			req.body.cert_disco_algo + ' -c ' + filepath + ' -t ' + 
+			((req.body.is_local == false)? 'remote' : 'local') + ' add', function(err, stdout, stderr) {
+				if (stderr !== '') {
+					console.error('direct_domain stderr: ' + stderr);
+					res.send(500, stderr);
+					return next();
+				}
+		
+	                fs.unlink(filepath, function (err) {
+				if (err)
+					console.error('Error removing temporary file: ' + err);
+			});
+//			res.setHeader('location', baseUrl + 'Domain/' + );
+			res.send(201);
+			return next();
+		});
+		return next();
+	});
+	return next();
 }
-function updateDomain (req, res, next) {
-    executeSql(req, res, next, 'Domain', 'update',
-        [req.params.id, req.body.name, req.body.anchor_path, req.body.crl_path, req.body.crypt_cert, req.body.cert_disco_algo], 200);
-}
+
 function deleteDomain(req, res, next) {
-    executeSql(req, res, next, 'Domain', 'delete', [req.params.id], 204);
+	var get_qry = resources['domain'].queries['get'];
+	pg.connect(connString, function (err, client, done) {
+	        if (err) {
+	            console.error('error fetching client from pool', err);
+	            res.send(500);
+	            return next();
+	        } else {
+	            client.query(get_qry, [req.params.id], function (err, result) {
+	                done();
+	                if (err) {
+	                    console.error('error running query', err);
+	                    res.send(500);
+	                    return next();
+	                }
+	                if (result.rowCount == 0) {
+	                    res.send(404);
+	                    return next();
+	                }
+			
+			console.log('command: ' + toolsPath + 'direct_domain -d ' + result.rows[0].name +
+				' remove');
+			var child = cp.exec(toolsPath + 'direct_domain -d ' + result.rows[0].name + 
+				' remove', function(err, stdout, stderr) {
+				if (stderr !== '') {
+					console.error('direct_domain stderr: ' + stderr);
+					res.send(500, stderr);
+					return next();
+				}
+				res.send(204);
+				return next();
+			});
+			return next();
+		   });
+		}
+	});
 }
 
 
@@ -102,7 +163,8 @@ function domainToJson(row) {
             anchor_path: row.anchor_path,
             crl_path: row.crl_path,
             crypt_cert: row.crypt_cert,
-            cert_disco_algo: row.cert_disco_algo
+            cert_disco_algo: row.cert_disco_algo,
+	    is_local: row.is_local
         }
     };
 }

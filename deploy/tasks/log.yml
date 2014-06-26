@@ -68,7 +68,7 @@
   file: path=/etc/logstash state=directory
   
 - name: Copy Logstash configuration file
-  copy: src=../src/log/logstash/server.conf dest=/etc/logstash
+  template: src=templates/logstash_server.conf.j2 dest=/etc/logstash/server.conf
   #notify: 
   #  - Restart logstash
     
