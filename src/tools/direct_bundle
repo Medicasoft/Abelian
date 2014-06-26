@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import argparse, urllib, sys, os, subprocess, anchorlib
+import argparse, urllib2, sys, os, subprocess, anchorlib
 
 CADIR = '/var/spool/direct/ca/trust'
 TEMPDIR = '/var/spool/direct/tmp'
@@ -20,7 +20,16 @@ bundle = None
 if parms.file != None:
     bundle = open(parms.file, 'rb')
 elif parms.url != None:
-    bundle = urllib.urlopen(parms.url)
+    try:
+        bundle = urllib2.urlopen(parms.url)
+    except IOError as ioe:
+        print ioe
+        exit(1)
+
+    rescode = bundle.getcode()
+    if rescode != 200:
+        print 'Unable to download bundle. Return code was: %s' % rescode
+        exit(1)
 else:
     bundle = sys.stdin
 
