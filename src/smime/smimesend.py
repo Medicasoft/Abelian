@@ -2,7 +2,7 @@
 import email, psycopg2,logging, certdisco, certvld
 
 TEMPDIR = '/var/spool/direct/tmp/'
-CADIR = '/var/spool/direct/ca/'
+CADIR = '/var/spool/direct/ca'
 
 def find_certificate(addr, anchor, algo):
     #algorithms:
@@ -58,10 +58,11 @@ def find_certificate(addr, anchor, algo):
 
 def send_message(sender, recipient, message_id, message):
     from M2Crypto import EVP, util, X509
-    import certdisco, certvld, crypto, subprocess
+    import certdisco, certvld, crypto, subprocess, os
 
     logging.debug('Start sending message to: %s', recipient)
     domain = recipient.partition('@')[2]
+    sender_domain = sender.partition('@')[2]
 
     try:
         logging.debug('Connecting to "maildb" database')
@@ -74,21 +75,19 @@ def send_message(sender, recipient, message_id, message):
     logging.debug('Searching database record for domain: %s', domain)
     cur.execute("SELECT anchor_path, crl_path, crypt_cert, cert_disco_algo FROM domains WHERE name = %s;", (domain,))
     dom = cur.fetchone()
-    if dom == None:
-        logging.warning('Recipient domain not trusted: %s', domain)
-        return 1
     cur.close()
     conn.close()
 
-    logging.debug('Recipient domain is trusted: %s', domain)
-    logging.debug('Certificate discovery algorithm: %s', dom[3])
-
-    from_key = CADIR + 'direct.key' #EVP.load_key('direct.key', util.passphrase_callback)
-    from_cert = CADIR + 'direct.pem' #X509.load_cert('direct.pem')
-    if dom[3] == 5: #cert_disco_algo = local (cert saved to database)
+    from_key = os.path.join(CADIR, 'key', sender_domain, 'direct.key') #EVP.load_key('direct.key', util.passphrase_callback)
+    from_cert = os.path.join(CADIR, 'cert', sender_domain, 'direct.pem') #X509.load_cert('direct.pem')
+    
+    algo = 0 if dom == None else dom[3]
+    anchor = '' if dom == None else dom[0]
+    logging.debug('Certificate discovery algorithm: %s', algo)
+    if (dom != None) and (dom[3] == 5): #cert_disco_algo = local (cert saved to database)
         to_cert = dom[2]
     else:
-        to_cert = find_certificate(recipient, dom[0], dom[3])
+        to_cert = find_certificate(recipient, anchor, algo)
 
     if to_cert == None:
         logging.warning('Recipient certificate not found: %s', recipient)
@@ -97,9 +96,10 @@ def send_message(sender, recipient, message_id, message):
     logging.debug('Sending encrypted mail message to: %s', recipient)
     command = ('/usr/sbin/sendmail', '-f', sender, '--', recipient)
     proc = subprocess.Popen(command, stdin=subprocess.PIPE)
-    proc.stdin.write('From: <%s>\r\n' % sender)
+
+    #proc.stdin.write('From: <%s>\r\n' % sender)
     proc.stdin.write('To: <%s>\r\n' % recipient)
-    proc.stdin.write('Message-ID: %s\r\n' % message_id)
+    #proc.stdin.write('Message-ID: %s\r\n' % message_id)
 
     proc.stdin.write(crypto.to_smime(message, from_key, from_cert, to_cert))
     proc.communicate()

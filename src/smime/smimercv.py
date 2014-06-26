@@ -7,7 +7,7 @@ DATAERR = 65
 TEMPFAIL = 75
 UNAVAILABLE = 69
 TEMPDIR = '/var/spool/direct/tmp/'
-CADIR = '/var/spool/direct/ca/'
+CADIR = '/var/spool/direct/ca'
 
 TEMPLATE = """
 -----BEGIN PKCS7-----
@@ -17,8 +17,12 @@ TEMPLATE = """
 
 def process_message(queue_id, recipient, sender, message):
     pid = os.getpid()
-    recipient_cert = CADIR + 'direct.pem'
-    recipient_key = CADIR + 'direct.key'
+
+    recipient_domain = recipient.partition('@')[2]
+    ca_path = os.path.join(CADIR, 'trust', recipient_domain)
+
+    recipient_key = os.path.join(CADIR, 'key', recipient_domain, 'direct.key')
+    recipient_cert = os.path.join(CADIR, 'cert', recipient_domain, 'direct.pem')
     message_id = None
     subject = None
 
@@ -66,7 +70,7 @@ def process_message(queue_id, recipient, sender, message):
     if not verify_sig_cert(sig, sender):
         return None
 
-    command = ('/usr/bin/env', 'openssl', 'cms', '-verify', '-CApath', CADIR)
+    command = ('/usr/bin/env', 'openssl', 'cms', '-verify', '-CApath', ca_path)
     proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     proc.stdin.write(msg_sign)
     stdout, stderr = proc.communicate()

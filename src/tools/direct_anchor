@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import argparse, sys, os, glob, subprocess, anchorlib
 
-CADIR = '/var/spool/direct/ca'
+CADIR = '/var/spool/direct/ca/trust'
 
 parser = argparse.ArgumentParser(description = 'Import trust anchor')
 parser.add_argument('cmd', choices = ['add', 'remove'])
