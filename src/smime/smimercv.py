@@ -36,13 +36,15 @@ def process_message(queue_id, recipient, sender, message):
     
     mail = Parser().parsestr(msg_sign)
 
+    if (subject == None) and (mail['subject'] != None):
+        subject = mail['subject']
     is_mdn = False
     sig = None
     for mpart in mail.walk():
         if (message_id == None) and (mpart['message-id'] != None):
             message_id = mail['message-id']
         if (subject == None) and (mpart['subject'] != None):
-            subject = mail['subject']
+            subject = mpart['subject']
         ct = mpart.get_content_type()
         if ct == 'message/disposition-notification':
             is_mdn = True
@@ -82,11 +84,8 @@ def save_message(queue_id, recipient, sender, msg_orig, msg_plain):
 
 def send_mdn(sender, recipient, orig_message_id, subject, msg_plain):
     import mdn
-    mail = Parser().parsestr(msg_plain, True)
-    subject = mail['subject']
 
-    msg_id, mdn_msg = mdn.make_mdn(sender, recipient, orig_message_id, subject)
-    
+    msg_id, mdn_msg = mdn.make_mdn(sender, recipient, orig_message_id, subject)   
     return smimesend.send_message(sender, recipient, msg_id, mdn_msg)
 
 def verify_sig_cert(sig, sender):
