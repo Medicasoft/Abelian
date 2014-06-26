@@ -6,6 +6,7 @@ var pg = require('pg'),
 	fs = require('fs'),
 	async = require('async'),
 	uuid = require('node-uuid'),
+	anchor = require('./anchor.js'),
     user = require('./user.js'),
     config = require('./config.js');
 
@@ -28,6 +29,7 @@ server.get('/Messages', getMessages);
 server.post('/Message', restify.bodyParser(), sendMessage);
 server.del('/Message/:id', deleteMessage);
 user.registerRoutes(server);
+anchor.registerRoutes(server);
 
 //start server
 server.listen(port, function() {

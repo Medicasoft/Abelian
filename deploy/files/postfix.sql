@@ -49,5 +49,33 @@ WITH (
   OIDS=FALSE
 );
 
-ALTER TABLE domains
+CREATE TABLE IF NOT EXISTS bundles
+(
+  id serial NOT NULL,
+  local_domain_name character varying NOT NULL,
+  url character varying NOT NULL,
+  interval integer NOT NULL,
+  last_run timestamp,
+  CONSTRAINT bundles_pk PRIMARY KEY (id)
+)
+WITH (
+  OIDS=FALSE
+);
+
+ALTER TABLE bundles
+OWNER TO direct;
+
+CREATE TABLE IF NOT EXISTS anchors
+(
+  id serial NOT NULL,
+  local_domain_name character varying NOT NULL,
+  domain_name character varying NULL,
+  cert character varying NOT NULL,
+  CONSTRAINT anchors_pk PRIMARY KEY (id)
+)
+WITH (
+  OIDS=FALSE
+);
+
+ALTER TABLE anchors
 OWNER TO direct;
