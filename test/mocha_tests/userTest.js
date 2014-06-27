@@ -4,7 +4,7 @@ var request = require("request");
 
 chai.config.includeStack = true;
 
-var baseUrl = "http://localhost:8085/";
+var baseUrl = "http://abelian.medicasoft.us:8085/";
 var userUrl = baseUrl + 'User';
 var userListUrl  = baseUrl + 'Users';
 
@@ -46,8 +46,10 @@ describe("user", function () {
     
 
     describe("#create", function () {
+        var userId;
         it("should create a new user, get it and compare", function (done) {
-            createUser(function (user, id) {
+            createUser("t12@t.t", function (user, id) {
+                userId = id;
                 //get
                 request({
                     uri: userUrl + '/' + id,
@@ -60,13 +62,24 @@ describe("user", function () {
                     done();
                 });
             });
+        });  
+        after(function(done){
+             //delete
+            request({
+                uri: userUrl + '/' + userId,
+                method: "DELETE"
+            }, function (err, resp, body) {
+                expect(err).to.not.exist;
+                expect(resp.statusCode).to.equal(204, 'HTTP Body: ' + JSON.stringify(body));
+                done();
+            });
         });
     });
 
     describe("#update, #get, #delete", function () {
         var user, id;
         before("create the user to test", function (done) {            
-            createUser(function (tUser, tId) { user = tUser; id = tId; done(); } );
+            createUser("t21@t.t", function (tUser, tId) { user = tUser; id = tId; done(); } );
         });
         it("should get the created user", function (done) {
             //get
@@ -112,6 +125,7 @@ describe("user", function () {
         });
 
         it("should delete the user and get 404 if try to get the user", function (done) {
+            
             //delete
             request({
                 uri: userUrl + '/' + id,
@@ -134,11 +148,11 @@ describe("user", function () {
     });
 });
 
-function createUser(cb) {
+function createUser(address, cb) {    
     var user = {
-        "address": "t@t.t",
+        "address": address,
         "certificate": null
-    };
+    };    
     //post
     request({
         uri: userUrl,
