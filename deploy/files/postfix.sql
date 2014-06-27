@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users
   id serial NOT NULL,
   address character varying NOT NULL UNIQUE,
   certificate bytea,
-  active boolean,
+  active boolean DEFAULT 't',
   CONSTRAINT pk PRIMARY KEY (id)
 )
 WITH (

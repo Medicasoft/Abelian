@@ -1,30 +1,33 @@
-  -  name: Generate server certificates for ca - ca.key        
-     command: openssl genrsa -out "{{SPOOL}}/ca/ca.key" 2048
+  -  name: Generate root server certificate - root.key        
+     command: openssl genrsa -out "/home/root/direct/root.key" 2048
 
-  -  name: Generate server certificates for ca - ca.pem        
-     command: openssl req -new -x509 -days 365 -subj "/CN={{DOMAIN}}_ca" -key "{{SPOOL}}/ca/ca.key" -out "{{SPOOL}}/ca/ca.pem"
+  -  name: Generate root server certificate public trust anchor - root.pem
+     command: openssl req -new -x509 -days 365 -subj "/CN={{DOMAIN}}_ca" -key "/home/root/direct/root.key" -out "{{SPOOL}}/ca/trust/{{DOMAIN}}/root.pem"
 
 
-  -  name: Generate server certificates for mail root - direct.key
-     command: openssl genrsa -out "{{SPOOL}}/ca/direct.key" 2048
+  -  name: Generate server certificate for local domain - direct.key
+     command: openssl genrsa -out "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.key" 2048
 
   -  name: Copy req_ext configuration template
-     template: src=templates/req_ext.conf.j2 dest={{SPOOL}}/ca/req_ext.conf
+     template: src=templates/req_ext.conf.j2 dest={{SPOOL}}/ca/tools/req_ext.conf
     
-  -  name: Generate server certificates for mail root - direct.csr
-     command: openssl req -new -subj "/CN={{MAIL_DOMAIN}}" -key "{{SPOOL}}/ca/direct.key" -out "{{SPOOL}}/ca/direct.csr" -config "{{SPOOL}}/ca/req_ext.conf"
+  -  name: Generate server certificates for local root - direct.csr
+     command: openssl req -new -subj "/CN={{MAIL_DOMAIN}}" -key "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.key" -out "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.csr" -config "{{SPOOL}}/ca/tools/req_ext.conf"
 
   -  name: Generate server certificates for mail root - direct.pem
-     command: openssl x509 -req -days 365 -in "{{SPOOL}}/ca/direct.csr" -CA "{{SPOOL}}/ca/ca.pem" -CAkey "{{SPOOL}}/ca/ca.key" -set_serial 1 -out "{{SPOOL}}/ca/direct.pem" -setalias "Self Signed SMIME" -addtrust emailProtection -addreject clientAuth -addreject serverAuth -trustout -extfile "{{SPOOL}}/ca/req_ext.conf" -extensions v3_ext
+     command: openssl x509 -req -days 365 -in "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.csr" -CA "{{SPOOL}}/ca/cert/{{DOMAIN}}/direct.pem" -CAkey "/home/root/direct/root.key" -set_serial 1 -out "{{SPOOL}}/ca/trust/{{DOMAIN}}/direct.pem" -setalias "Self Signed SMIME" -addtrust emailProtection -addreject clientAuth -addreject serverAuth -trustout -extfile "{{SPOOL}}/ca/tools/req_ext.conf" -extensions v3_ext
 
+  -  name: Remove csr file
+     file: path={{SPOOL}}/ca/key/{{DOMAIN}}/direct.csr state=absent  
+     
   -  name: Remove req_ext configuration file
-     file: path={{SPOOL}}/ca/req_ext.conf state=absent
+     file: path={{SPOOL}}/ca/tools/req_ext.conf state=absent
   
-  -  name: Fetch the generated ca.pem
-     fetch: src={{SPOOL}}/ca/ca.pem dest=certificates
+  -  name: Fetch the generated trust anchor for local domain
+     fetch: src={{SPOOL}}/ca/cert/{{DOMAIN}}/direct.pem dest=certificates
 
   -  name: Save certificate info (for configuring PowerDNS) as <PKIX tagkey RSASHA1 content> – where tagkey is the decimal value of the last two bytes of the modulus (and skip –--BEGIN CERTIFICATE-----)
-     shell: openssl x509 -in "{{SPOOL}}/ca/direct.pem" -modulus | awk '
+     shell: openssl x509 -in "{{SPOOL}}/ca/trust/{{DOMAIN}}/direct.pem" -modulus | awk '
           BEGIN {ORS=" ";OFS=" ";PKIX=1;RSASHA1=5}
           {
             if(NR==1) printf("%d %d %d ",PKIX,strtonum("0x" substr($0,length($0)-3)),RSASHA1);               

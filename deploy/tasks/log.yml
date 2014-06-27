@@ -67,6 +67,9 @@
 - name: Create Logstash configuration directory
   file: path=/etc/logstash state=directory
   
+- name: Create Logstash log directory
+  file: path=/var/log/logstash state=directory
+  
 - name: Copy Logstash configuration file
   template: src=templates/logstash_server.conf.j2 dest=/etc/logstash/server.conf
   #notify: 

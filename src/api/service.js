@@ -124,7 +124,7 @@ function sendMessage(req, res, next) {
 }
 
 function saveMessage(req, callback) {
-    var child = cp.exec('smimesend.py', {cwd: '../smime/' }, function(err, stdout, stderr) {
+    var child = cp.exec('./smimesend.py', {cwd: '/var/spool/direct/' }, function(err, stdout, stderr) {
         if(stderr !== '')
             console.error('smimesend.py stderr: ' + stderr);
        
