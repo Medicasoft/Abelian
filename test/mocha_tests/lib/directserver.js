@@ -56,6 +56,57 @@ DirectServer.prototype.addAnchor = function (callback, local_domain, domain, anc
     requestCall(callback, url, 'POST', 201, { local_domain_name: local_domain, domain_name: domain, cert: anchor });
 };
 
+DirectServer.prototype.removeAnchor = function (callback, local_domain, domain) {    
+    var remove = function (err, anchor) {
+        if (err) {
+            callback(err);
+            return;
+        }
+        if (anchor != null) {
+            var url = anchor.id;
+            utils.logMessage("...removing server anchor " + url);
+            requestCall(callback, url, 'DELETE', 204);
+        }
+    }
+    this.findAnchor(remove, local_domain, domain);
+};
+
+DirectServer.prototype.findAnchor = function (callback, local_domain, domain) {    
+    this.listAnchors(function (err, anchors) {
+        if (err) {
+            callback(err);
+            return;
+        }
+        for (var i in anchors.entry) {
+            var anchor = anchors.entry[i];
+            if (anchor.content.local_domain_name == local_domain && anchor.content.domain_name == domain) {
+                callback(null, anchor);
+                return;
+            }
+        }
+        callback(null, null);
+    });
+};
+
+DirectServer.prototype.deleteAllAnchors = function (callback) {
+    this.listAnchors(function (err, anchors) {
+        if (err) {
+            callback(err);
+            return;
+        }
+        var resAnchors = [];
+        async.each(anchors.entry, function (cb, e) {
+            this.removeAnchor(cb, e.id);
+        }, callback);
+    });
+};
+
+DirectServer.prototype.listAnchors = function (callback) {
+    var url = this.getConfigURL('/Anchors');
+    utils.logMessage("...listing server anchors " + url);
+    requestCall(callback, url, 'GET', 200);
+};
+
 DirectServer.prototype.addDomain = function(callback, domain, is_local, cert_disco_algo, cert) {
     var url = this.getConfigURL('/Domain');
     utils.logMessage("...adding server domain " + url);

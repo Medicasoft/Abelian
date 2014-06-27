@@ -47,15 +47,14 @@ describe("domain", function () {
             });
         });
     });
-
-    
     
     describe("#create", function () {
-        var domain, id;
+        var id;
+               
         
         it("should create a new domain, get it and compare", function (done) {
             createDomain(function (tDomain, tId) {
-                domain = tDomain; id = tId; 
+                var domain = tDomain; id = tId; 
                 //get
                 request({
                     uri: domainUrl + '/' + id,
@@ -71,8 +70,54 @@ describe("domain", function () {
                     done();
                 });
             });
+            
+           
         });
-        after(function(done){
+        
+        it("should reject domain creation when certificate discovery is local and no certificate was provided", function (done) {
+             var domain = {
+              "name": "abelianL.medicasoft.us",      
+              "crl_path": "mr_crl",
+              "cert_disco_algo": 'local',
+              "is_local" : true,
+              "active" : true
+            };
+            //post
+            request({
+                uri: domainUrl,
+                method: "POST",
+                json: domain
+            }, function (err, resp, body) {
+                expect(err).to.not.exist;
+                expect(resp.statusCode).to.equal(400, 'HTTP Body: ' + JSON.stringify(body));
+                expect(body).to.equal("crypt_cert required for local algorithm");
+                done();            
+            });
+        });
+        
+        it("should reject domain creation when certificate discovery is local and NULL certificate was provided", function (done) {
+             var domain = {
+              "name": "abelianL.medicasoft.us",      
+              "crl_path": "mr_crl",
+              "crypt_cert" : null,
+              "cert_disco_algo": 'local',
+              "is_local" : true,
+              "active" : true
+            };
+            //post
+            request({
+                uri: domainUrl,
+                method: "POST",
+                json: domain
+            }, function (err, resp, body) {
+                expect(err).to.not.exist;
+                expect(resp.statusCode).to.equal(400, 'HTTP Body: ' + JSON.stringify(body));
+                expect(body).to.equal("crypt_cert required for local algorithm");
+                done();            
+            });
+        });
+        
+        after(function (done) {
             //delete
             request({
                 uri: domainUrl + '/' + id,
@@ -83,7 +128,10 @@ describe("domain", function () {
                 done();
             });
         });
+       
     });
+    
+    
 
     describe("#update, #get, #delete", function () {        
         var domain, id;
@@ -112,40 +160,40 @@ describe("domain", function () {
             });
         });
 
-        it.skip("should update the domain, get it and compare", function (done) {
-            var updatedDomain = {
-              "name": "test3.infoworld.ro",
-              "anchor_path": "my_anchor2",
-              "crl_path": "mr_crl2",
-              "crypt_cert": null,
-              "cert_disco_algo": 'address_cert'
-            };
-            //put
-            request({
-                uri: domainUrl + '/' + id,
-                method: "PUT",
-                json: updatedDomain
-            }, function (err, resp, body) {
-                expect(err).to.not.exist;
-                expect(resp.statusCode).to.equal(200, 'HTTP Body: ' + JSON.stringify(body));
+        //it.skip("should update the domain, get it and compare", function (done) {
+        //    var updatedDomain = {
+        //      "name": "test3.infoworld.ro",
+        //      "anchor_path": "my_anchor2",
+        //      "crl_path": "mr_crl2",
+        //      "crypt_cert": null,
+        //      "cert_disco_algo": 'address_cert'
+        //    };
+        //    //put
+        //    request({
+        //        uri: domainUrl + '/' + id,
+        //        method: "PUT",
+        //        json: updatedDomain
+        //    }, function (err, resp, body) {
+        //        expect(err).to.not.exist;
+        //        expect(resp.statusCode).to.equal(200, 'HTTP Body: ' + JSON.stringify(body));
 
-                //get
-                request({
-                    uri: domainUrl + '/' + id,
-                    method: "GET"
-                }, function (err, resp, body) {
-                    expect(err).to.not.exist;
-                    expect(resp.statusCode).to.equal(200, 'HTTP Body: ' + JSON.stringify(body));
-                    var actualJson = JSON.parse(resp.body);
-                    expect(actualJson.name).to.equal(updatedDomain.name);
-                    //expect(actualJson.active).to.equal(updatedDomain.active);
-                    //expect(actualJson.cert_disco_algo).to.equal(updatedDomain.cert_disco_algo);
-                    expect(actualJson.is_local).to.equal(updatedDomain.is_local);
-                    done();
-                });
+        //        //get
+        //        request({
+        //            uri: domainUrl + '/' + id,
+        //            method: "GET"
+        //        }, function (err, resp, body) {
+        //            expect(err).to.not.exist;
+        //            expect(resp.statusCode).to.equal(200, 'HTTP Body: ' + JSON.stringify(body));
+        //            var actualJson = JSON.parse(resp.body);
+        //            expect(actualJson.name).to.equal(updatedDomain.name);
+        //            //expect(actualJson.active).to.equal(updatedDomain.active);
+        //            //expect(actualJson.cert_disco_algo).to.equal(updatedDomain.cert_disco_algo);
+        //            expect(actualJson.is_local).to.equal(updatedDomain.is_local);
+        //            done();
+        //        });
 
-            });
-        });
+        //    });
+        //});
 
         it("should delete the domain and get 404 if try to get the domain", function (done) {
             //delete
@@ -172,7 +220,7 @@ describe("domain", function () {
 
 function createDomain(cb) {
     var domain = {
-      "name": "abelian7.medicasoft.us",      
+      "name": "abelian70.medicasoft.us",      
       "crl_path": "mr_crl",
       "crypt_cert": null,
       "cert_disco_algo": 'hybrid',

@@ -34,10 +34,11 @@ Status.SENT = 'sent';
 Status.REJECTED = 'rejected';
 Status.INCOMPLETE = 'incomplete';
 Status.COMPLETED = 'complete';
+Status.NO_RESPONSE = 'no_response';
 
-var RETRY_EMAIL_DELAY = 2000;
-var INITIAL_RECEIVE_EMAIL_DELAY = 3000;
-var MAX_RECEIVE_EMAIL_TRIES =  30; //30
+var RETRY_EMAIL_DELAY = 1000;
+var INITIAL_RECEIVE_EMAIL_DELAY = 2000;
+var MAX_RECEIVE_EMAIL_TRIES =  3; //30
 var RESPECT_MDN = true;
 
 var TestResult = function(sendingIP, receivingIP, subject, messageId) {
@@ -199,7 +200,11 @@ var receive = function receive(server, result, tryCount, onSuccess) {
 			//callback(err)            
         } else {
             utils.logMessage('[%s] ' + "receive...list..." + "...count..." + totalmsgcount, server.host);
-            body.entry = body.entry.reverse(); //we know that the most recent messages are at the end of the list
+            body.entry.sort(function (e1, e2) {
+                var prefixLength = ("http://" + server.serviceUrl + ":" + server.servicePort + "/Message/").length;                
+                return e1.id.substring(prefixLength) - e2.id.substring(prefixLength);
+            });            
+            body.entry = body.entry.slice(-10); //we know that the most recent messages are at the end of the list
             async.each(body.entry, function(entry, callback){
                 async.waterfall([
                     function(cb) { server.getMessage(cb, entry.id); },
@@ -234,7 +239,8 @@ var receive = function receive(server, result, tryCount, onSuccess) {
                     if (tryCount < MAX_RECEIVE_EMAIL_TRIES) {
                         setTimeout(function () { receive(server, result, tryCount, onSuccess); }, RETRY_EMAIL_DELAY);
                     } else {
-                        result.setError(new Error("no response from receiving server"));
+                        result.status = Status.NO_RESPONSE; //result.setError(new Error("no response from receiving server"));
+                        emitter.emit(EmitKey.END, result);
                     }
                 }
                 else 
@@ -253,16 +259,9 @@ var execute = function execute(sendingServer, receivingServer, email) {
     utils.logMessage(subject);
 	var result = new TestResult(sendingServer.host, receivingServer.host, subject, email.actual["message-id"]);
     
-    var message = '';
-    message += 'from: <' + email.actual.from + '>\n';
-    message += 'to: <' + email.actual.to + '>\n';
-    message += 'subject: ' + email.actual.subject + '\n';
-    message += 'Date: ' + email.actual.date + '\n';
-    message += 'Message-ID: ' + email.actual["message-id"] + '\n';
-    message += '\n';
-    message += email.actual.body;
+	var message = utils.generateMessage(email);
     
-    var cb = function(err, resp, body) {
+    var cb = function(err, body) {
         if(err) {
             utils.logMessage("send...error..." + sendingServer.host);
             result.setError(err);
