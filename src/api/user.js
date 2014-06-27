@@ -102,14 +102,18 @@ function createDomain (req, res, next) {
 					res.send(500, stderr);
 					return next();
 				}
+                var id 
+                if (stdout !== '') {
+        			res.setHeader('location', baseUrl + 'Domain/' + stdout);
+                }
 		
-	                fs.unlink(filepath, function (err) {
-				if (err)
-					console.error('Error removing temporary file: ' + err);
-			});
-//			res.setHeader('location', baseUrl + 'Domain/' + );
-			res.send(201);
-			return next();
+                fs.unlink(filepath, function (err) {
+                    if (err)
+                        console.error('Error removing temporary file: ' + err);
+                });
+    
+                res.send(201);
+                return next();
 		});
 		return next();
 	});

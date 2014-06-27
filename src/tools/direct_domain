@@ -27,7 +27,9 @@ local = (parms.type == 'local')
 conn = psycopg2.connect(database='maildb', user='direct')
 cur = conn.cursor();
 if parms.cmd == 'add':
-    cur.execute("INSERT INTO domains(name,cert_disco_algo,crypt_cert,is_local) VALUES(%s,%s,%s,%s);",(parms.domain,algo,cert,local))
+    cur.execute("INSERT INTO domains(name,cert_disco_algo,crypt_cert,is_local) VALUES(%s,%s,%s,%s) returning id;",(parms.domain,algo,cert,local))
+    id = cur.fetchone()[0];    
+    print id
 elif parms.cmd == 'activate':
     cur.execute("UPDATE domains SET active = 't' WHERE name = %s;", (parms.domain,))
 elif parms.cmd == 'inactivate':
