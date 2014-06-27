@@ -9,19 +9,19 @@
      command: openssl genrsa -out "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.key" 2048
 
   -  name: Copy req_ext configuration template
-     template: src=templates/req_ext.conf.j2 dest={{SPOOL}}/ca/tools/req_ext.conf
+     template: src=templates/req_ext.conf.j2 dest={{SPOOL}}/tools/req_ext.conf
     
   -  name: Generate server certificates for local root - direct.csr
-     command: openssl req -new -subj "/CN={{MAIL_DOMAIN}}" -key "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.key" -out "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.csr" -config "{{SPOOL}}/ca/tools/req_ext.conf"
+     command: openssl req -new -subj "/CN={{MAIL_DOMAIN}}" -key "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.key" -out "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.csr" -config "{{SPOOL}}/tools/req_ext.conf"
 
   -  name: Generate server certificates for mail root - direct.pem
-     command: openssl x509 -req -days 365 -in "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.csr" -CA "{{SPOOL}}/ca/cert/{{DOMAIN}}/direct.pem" -CAkey "/home/root/direct/root.key" -set_serial 1 -out "{{SPOOL}}/ca/trust/{{DOMAIN}}/direct.pem" -setalias "Self Signed SMIME" -addtrust emailProtection -addreject clientAuth -addreject serverAuth -trustout -extfile "{{SPOOL}}/ca/tools/req_ext.conf" -extensions v3_ext
+     command: openssl x509 -req -days 365 -in "{{SPOOL}}/ca/key/{{DOMAIN}}/direct.csr" -CA "{{SPOOL}}/ca/cert/{{DOMAIN}}/direct.pem" -CAkey "/home/root/direct/root.key" -set_serial 1 -out "{{SPOOL}}/ca/trust/{{DOMAIN}}/direct.pem" -setalias "Self Signed SMIME" -addtrust emailProtection -addreject clientAuth -addreject serverAuth -trustout -extfile "{{SPOOL}}/tools/req_ext.conf" -extensions v3_ext
 
   -  name: Remove csr file
      file: path={{SPOOL}}/ca/key/{{DOMAIN}}/direct.csr state=absent  
      
   -  name: Remove req_ext configuration file
-     file: path={{SPOOL}}/ca/tools/req_ext.conf state=absent
+     file: path={{SPOOL}}/tools/req_ext.conf state=absent
   
   -  name: Fetch the generated trust anchor for local domain
      fetch: src={{SPOOL}}/ca/cert/{{DOMAIN}}/direct.pem dest=certificates
