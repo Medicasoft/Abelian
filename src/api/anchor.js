@@ -51,7 +51,7 @@ function createAnchor (req, res, next) {
 }
 
 function deleteAnchor (req, res, next) {
-
+   var entityToJson = resources['anchor'].toJson;
     var get_qry = resources['anchor'].queries['get'];
     pg.connect(connString, function (err, client, done) {
         if (err) {
