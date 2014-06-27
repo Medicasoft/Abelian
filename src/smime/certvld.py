@@ -53,11 +53,14 @@ def verify_binding(x509, addr, domain, addressBound):
 
 def verify_cert(cert, local_domain, addr):
     #M2Crypto needs a patch to verify expiration, crl and path so do this for now
-    import subprocess, os
-
+    import subprocess, os, glob
+    ca_path = os.path.join(CADIR, 'trust', local_domain)
     logging.debug('Verifying certificate expiration, signature, revocation and path: %s', addr)
-    command = ('/usr/bin/env', 'openssl', 'verify', '-CApath', os.path.join(CADIR, 'trust', local_domain))
+    command = ('/usr/bin/env', 'openssl', 'verify', '-CApath', ca_path)
 
+    issuer_hash = hex(cert.get_issuer().as_hash())[2:-1]
+    if len(glob.glob(os.path.join(ca_path, issuer_hash, '.r*'))):
+        command.append('-crl_check')
     proc = subprocess.Popen(command, stdin = subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc.stdin.write(cert.as_pem())
     stdout, stderr = proc.communicate()
