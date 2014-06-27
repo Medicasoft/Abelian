@@ -93,6 +93,8 @@ def send_message(sender, recipient, message_id, message):
         logging.warning('Recipient certificate not found: %s', recipient)
         return 1
 
+    logging.debug('Encrypting message')
+    cms = crypto.to_smime(message, from_key, from_cert, to_cert)
     logging.debug('Sending encrypted mail message to: %s', recipient)
     command = ('/usr/sbin/sendmail', '-f', sender, '--', recipient)
     proc = subprocess.Popen(command, stdin=subprocess.PIPE)
@@ -100,8 +102,7 @@ def send_message(sender, recipient, message_id, message):
     #proc.stdin.write('From: <%s>\r\n' % sender)
     proc.stdin.write('To: <%s>\r\n' % recipient)
     proc.stdin.write('Message-ID: %s\r\n' % message_id)
-
-    proc.stdin.write(crypto.to_smime(message, from_key, from_cert, to_cert))
+    proc.stdin.write(cms)
     proc.communicate()
     status = proc.returncode
     if status == 0:
@@ -143,5 +144,9 @@ if __name__ == "__main__":
         exit(2)
     recipients = email.Utils.getaddresses(msg.get_all('to',[]) + msg.get_all('cc', []))
     message_id = msg['message-id']
+    retval = 0
     for recipient in recipients:
-        send_message(sender, recipient[1], message_id, eml)
+        err = send_message(sender, recipient[1], message_id, eml)
+        if err != 0:
+            retval = err
+    exit(retval)
