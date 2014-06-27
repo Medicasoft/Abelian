@@ -99,7 +99,7 @@ def send_message(sender, recipient, message_id, message):
 
     #proc.stdin.write('From: <%s>\r\n' % sender)
     proc.stdin.write('To: <%s>\r\n' % recipient)
-    #proc.stdin.write('Message-ID: %s\r\n' % message_id)
+    proc.stdin.write('Message-ID: %s\r\n' % message_id)
 
     proc.stdin.write(crypto.to_smime(message, from_key, from_cert, to_cert))
     proc.communicate()
