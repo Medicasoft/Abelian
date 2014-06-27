@@ -87,37 +87,58 @@ function getDomain (req, res, next) {
     getEntity(req, res, next, 'Domain');
 }
 function createDomain (req, res, next) {
-	var filepath = tempPath + guid.v4() + '.tmp';
-	fs.writeFile(filepath, req.body.crypt_cert,function(err) {
-		if (err) {
-			console.error('Error writing temporary file: ' + err);
-			res.send(500, err);
+	if (!req.body.crypt_cert && req.body.cert_disco_algo == 'local') {
+		res.send(400, 'crypt_cert required for local algorithm');
+		return next();
+	}
+	if (req.body.crypt_cert) {
+		var filepath = tempPath + guid.v4() + '.tmp';
+		fs.writeFile(filepath, req.body.crypt_cert,function(err) {
+			if (err) {
+				console.error('Error while  writing temporary file: ' + err);
+				res.send(500, err);
+				return next();
+			}
+			
+			callAddDomain(req, res, next, filepath);
+			return next();
+		});
+		return next();
+	}
+	callAddDomain(req, res, next);
+	return next();
+}
+
+function callAddDomain(req, res, next, filepath) {
+	var command = toolsPath + 'direct_domain -d ' + req.body.name;
+	if (req.body.cert_disco_algo)
+		command += ' -a ' + req.body.cert_disco_algo;
+	if (filepath)
+		command += ' -c ' + filepath;
+	if (req.body.is_local != undefined)
+		command += ' -t ' + (req.body.is_local == false ? 'remote' : 'local');
+	command += ' add';
+
+		
+	var child = cp.exec(command, function(err, stdout, stderr) {
+                if (filepath) {
+			fs.unlink(filepath, function (err) {
+				if (err)
+					console.error('Error removing temporary file: ' + err);
+			});
+		}
+
+		if (stderr !== '') {
+			console.error('direct_domain stderr: ' + stderr);
+			res.send(500, stderr);
 			return next();
 		}
-		var child = cp.exec(toolsPath + 'direct_domain -d ' + req.body.name + ' -a ' +
-			req.body.cert_disco_algo + ' -c ' + filepath + ' -t ' + 
-			((req.body.is_local == false)? 'remote' : 'local') + ' add', function(err, stdout, stderr) {
-				if (stderr !== '') {
-					console.error('direct_domain stderr: ' + stderr);
-					res.send(500, stderr);
-					return next();
-				}
-                var id 
                 if (stdout !== '') {
         			res.setHeader('location', baseUrl + 'Domain/' + stdout);
                 }
-		
-                fs.unlink(filepath, function (err) {
-                    if (err)
-                        console.error('Error removing temporary file: ' + err);
-                });
-    
-                res.send(201);
-                return next();
-		});
+		res.send(201);
 		return next();
 	});
-	return next();
 }
 
 function deleteDomain(req, res, next) {
@@ -140,8 +161,6 @@ function deleteDomain(req, res, next) {
 	                    return next();
 	                }
 			
-			console.log('command: ' + toolsPath + 'direct_domain -d ' + result.rows[0].name +
-				' remove');
 			var child = cp.exec(toolsPath + 'direct_domain -d ' + result.rows[0].name + 
 				' remove', function(err, stdout, stderr) {
 				if (stderr !== '') {
