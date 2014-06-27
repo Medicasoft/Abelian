@@ -72,7 +72,7 @@ def process_message(queue_id, recipient, sender, message):
     if sig == None:
         return None
 
-    if not verify_sig_cert(sig, sender):
+    if not verify_sig_cert(sig, sender, recipient_domain):
         return None
 
     command = ('/usr/bin/env', 'openssl', 'cms', '-verify', '-CApath', ca_path)
@@ -97,14 +97,14 @@ def send_mdn(sender, recipient, orig_message_id, subject, msg_plain):
     msg_id, mdn_msg = mdn.make_mdn(sender, recipient, orig_message_id, subject)   
     return smimesend.send_message(sender, recipient, msg_id, mdn_msg)
 
-def verify_sig_cert(sig, sender):
+def verify_sig_cert(sig, sender, local_domain):
     import certvld
 
     p7 = SMIME.load_pkcs7_bio(BIO.MemoryBuffer(sig))
     certs = p7.get0_signers(X509.X509_Stack())
     if len(certs) == 0:
         return False
-    if not certvld.verify_cert(certs[0], None, sender):
+    if not certvld.verify_cert(certs[0], local_domain, sender):
         return False
     if not certvld.verify_binding(certs[0], sender, sender.partition('@')[2], True):
         return False

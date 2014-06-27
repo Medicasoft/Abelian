@@ -4,7 +4,7 @@ import email, psycopg2,logging, certdisco, certvld
 TEMPDIR = '/var/spool/direct/tmp/'
 CADIR = '/var/spool/direct/ca'
 
-def find_certificate(addr, anchor, algo):
+def find_certificate(addr, local_domain, algo):
     #algorithms:
     # 0 = hybrid
     # 1 = address bound DNS CERT
@@ -22,7 +22,7 @@ def find_certificate(addr, anchor, algo):
         if certs != []:
             for cert in certs:
                 logging.debug('Validating address bound DNS CERT certificate')
-                if certvld.validate(cert, anchor, addr, domain, addressBound = True):
+                if certvld.validate(cert, local_domain, addr, domain, addressBound = True):
                     return cert
             return None
     
@@ -30,7 +30,7 @@ def find_certificate(addr, anchor, algo):
         certs = certdisco.dns_cert(domain)
         if certs != []:
             for cert in certs:
-                if certvld.validate(cert, anchor, addr, domain, addressBound = False):
+                if certvld.validate(cert, local_domain, addr, domain, addressBound = False):
                     return cert
             return None
 
@@ -40,7 +40,7 @@ def find_certificate(addr, anchor, algo):
             certs = certdisco.ldap_qry(uri, addr)
             if certs != []:
                 for cert in certs:
-                    if certvld.validate(cert, anchor, addr, domain, addressBound = True):
+                    if certvld.validate(cert, local_domain, addr, domain, addressBound = True):
                         return cert
                 return None
 
@@ -50,7 +50,7 @@ def find_certificate(addr, anchor, algo):
             certs = certdisco.ldap_qry(uri, domain)
             if certs != []:
                 for cert in certs:
-                    if certvld.validate(cert, anchor, addr, domain, addressBound = False):
+                    if certvld.validate(cert, local_domain, addr, domain, addressBound = False):
                         return cert
                 return None
 
@@ -82,12 +82,12 @@ def send_message(sender, recipient, message_id, message):
     from_cert = os.path.join(CADIR, 'cert', sender_domain, 'direct.pem') #X509.load_cert('direct.pem')
     
     algo = 0 if dom == None else dom[3]
-    anchor = '' if dom == None else dom[0]
+
     logging.debug('Certificate discovery algorithm: %s', algo)
     if (dom != None) and (dom[3] == 5): #cert_disco_algo = local (cert saved to database)
         to_cert = dom[2]
     else:
-        to_cert = find_certificate(recipient, anchor, algo)
+        to_cert = find_certificate(recipient, sender_domain, algo)
 
     if to_cert == None:
         logging.warning('Recipient certificate not found: %s', recipient)

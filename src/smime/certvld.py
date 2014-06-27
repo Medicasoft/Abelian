@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 import M2Crypto as crypto, logging
 TEMPDIR = '/var/spool/direct/tmp/'
+CADIR = '/var/spool/direct/ca'
 
-def validate(cert, anchor, addr, domain, addressBound = True):
+def validate(cert, local_domain, addr, domain, addressBound = True):
     c = crypto.X509.load_cert_der_string(cert)
     #check binding to expected entity
     if not verify_binding(c, addr, domain, addressBound):
@@ -11,7 +12,7 @@ def validate(cert, anchor, addr, domain, addressBound = True):
     #check signature
     #not been revoked
     #has a trusted certificate path
-    return verify_cert(c, anchor, addr)
+    return verify_cert(c, local_domain, addr)
     
 
 
@@ -50,16 +51,17 @@ def verify_binding(x509, addr, domain, addressBound):
     logging.debug('Certificate binding verification: OK')
     return True
 
-def verify_cert(cert, anchor, addr):
+def verify_cert(cert, local_domain, addr):
     #M2Crypto needs a patch to verify expiration, crl and path so do this for now
-    import subprocess
-    certfile = TEMPDIR + addr.replace('@', '.')
-    cert.save(certfile, crypto.X509.FORMAT_PEM)
-    logging.debug('Verifying certificate expiration, signature, revocation and path: %s', anchor)
-    command = ('/usr/bin/env', 'openssl', 'verify', '-CApath', '/var/spool/direct/ca', certfile)
-    proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    import subprocess, os
+
+    logging.debug('Verifying certificate expiration, signature, revocation and path: %s', addr)
+    command = ('/usr/bin/env', 'openssl', 'verify', '-CApath', os.path.join(CADIR, 'trust', local_domain))
+
+    proc = subprocess.Popen(command, stdin = subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc.stdin.write(cert.as_pem())
     stdout, stderr = proc.communicate()
-    if (proc.returncode == 0) and (stdout.strip() == "%s: OK" % certfile):
+    if (proc.returncode == 0) and (stdout.strip() == "stdin: OK"):
         return True
     logging.debug('Validation failed: %s', stdout)
     return False
