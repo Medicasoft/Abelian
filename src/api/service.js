@@ -50,6 +50,10 @@ function getMessage(req, res, next) {
 		            res.send(500);
 		            return next();
 		        }
+                if (result.rowCount == 0) {
+                    res.send(404);
+                    return next();
+                }
 
 		        var msg = result.rows[0].msg;
 		        res.header('Content-Type', 'application/mime');
