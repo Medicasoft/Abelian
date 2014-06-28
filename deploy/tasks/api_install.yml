@@ -1,0 +1,9 @@
+- name: Install node.js
+  apt: name={{item}} state=present
+  with_items:
+      - nodejs
+      - npm
+      - nodejs-legacy
+
+- name: Install node.js module forever as global
+  npm: name=forever global=yes  

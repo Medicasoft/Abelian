@@ -10,8 +10,12 @@
     - include: tasks/certificates.yml 
     - include: tasks/pdns.yml user=postgres
     - include: tasks/postfix.yml user=postgres
-    - include: tasks/api.yml
-    - include: tasks/log.yml
+    - include: tasks/api_install.yml
+    - include: tasks/api_deploy.yml
+    - include: tasks/elasticsearch.yml
+    - include: tasks/logstash.yml
+    - include: tasks/kibana.yml
+    - include: tasks/nginx.yml
     
   handlers: 
     - include: handlers/handlers.yml

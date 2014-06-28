@@ -1,0 +1,43 @@
+- name: Download Logstash
+  get_url: url=https://download.elasticsearch.org/logstash/logstash/logstash-1.4.1.tar.gz dest=/opt/logstash-1.4.1.tar.gz
+  
+- name: Uncompress Logstash
+  shell: chdir=/opt {{item}} creates=/opt/logstash
+  with_items:
+    - "tar zxf /opt/logstash-1.4.1.tar.gz"        
+    - "mv logstash-1.4.1 logstash"
+    #- "rm logstash-*.tar.gz"
+  sudo: yes
+     
+- name: Copy Logstash Init Script
+  copy: src=files/logstash dest=/etc/init.d/logstash  
+  #notify: 
+  #  - Restart logstash
+    
+- name: Set Logstash Init Script permissions 
+  file: path=/etc/init.d/logstash mode=770
+
+- name: Start Logstash on boot
+  command: update-rc.d logstash defaults 96 04
+
+- name: Create Logstash configuration directory
+  file: path=/etc/logstash state=directory
+  
+- name: Create Logstash log directory
+  file: path=/var/log/logstash state=directory
+  
+- name: Copy Logstash configuration file
+  template: src=templates/logstash_server.conf.j2 dest=/etc/logstash/server.conf
+  #notify: 
+  #  - Restart logstash
+    
+- name: Copy Logstash configuration files
+  copy: src=../src/log/logstash/grok/postfix.grok dest=/opt/logstash/patterns/postfix.grok
+  #copy: src={{item}} dest=/opt/logstash/patterns/
+  #with_fileglob:
+  #  - ../src/log/logstash/grok/*.grok        
+  #notify: 
+  #  - Restart logstash
+    
+#TODO # Logrotate job for logstash
+
