@@ -100,7 +100,7 @@
   replace: 
     dest=/opt/kibana/config.js
     regexp='elasticsearch:\s"http://"\+window\.location\.hostname\+":9200",'    
-    replace='elasticsearch{{':'}} "http://192.168.33.10:9200",'
+    replace='elasticsearch{{':'}} "{{ELASTICSEARCH_HTTP_URL}}",'
     
 - name: Configure Kibana dashboards json
   replace: 
@@ -115,8 +115,8 @@
   apt: name=nginx state=present
 
 - name: Configure nginx
-  replace: 
-    dest=/etc/nginx/sites-available/default
-    regexp='root /usr/share/nginx/html;'    
-    replace='root /opt/kibana;'
+  template: src=templates/nginx_default.j2 dest=/etc/nginx/sites-available/default
   notify: Restart nginx
+
+- name: Configure password  
+  htpasswd: path=/etc/nginx/conf.d/abelian.htpasswd name={{KIBANA_LOGIN_USERNAME}} password={{KIBANA_LOGIN_PASSWORD}} owner=root mode=0640 state=present

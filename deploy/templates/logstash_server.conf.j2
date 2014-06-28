@@ -66,7 +66,8 @@ output {
 		type => "postfix"
 		cluster => "logstash_cluster"
 		embedded => false
-		host => "{{ELASTICSEARCH_IP}}"
+		host => "{{ELASTICSEARCH_HOST}}"
+        port => {{ELASTICSEARCH_PORT}}
 		node_name => "logstash_node"
 		protocol => "http"
 	  }
