@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+import argparse, sys, os, subprocess, shutil, pwd
+
+KEYDIR = '/var/spool/direct/ca/key'
+CERTDIR = '/var/spool/direct/ca/cert'
+
+def demote():
+    pw_record = pwd.getpwnam('postgres')
+    user_uid  = pw_record.pw_uid
+    user_gid  = pw_record.pw_gid
+    def result():
+        os.setgid(user_gid)
+        os.setuid(user_uid)
+    return result
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-d', '--domain', required = True,help='mail domain name')
+parser.add_argument('-k', '--key_file', required=True, help='private key file PEM format')
+parser.add_argument('-c', '--cert_file', required=True, help='public key file PEM format')
+
+parms = parser.parse_args()
+
+#replace the direct key and cert files with the new ones
+shutil.copy2(parms.key_file, os.path.join(KEYDIR, parms.domain, 'direct.key'))
+shutil.copy2(parms.cert_file, os.path.join(CERTDIR, parms.domain, 'direct.pem'))
+
+#compute modulus
+cmd = ('openssl', 'x509', '-in', parms.cert_file, '-noout', '-modulus')
+proc = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+stdout, stderr = proc.communicate()
+
+modulus = int('0x%s' % stdout[-5:], 16)
+
+#prepare CERT record
+cert = '1 %s 5 ' % modulus
+with open(parms.cert_file) as fin:
+    for line in fin:
+        if line.startswith('-----'):
+            continue
+        cert += line.replace('\n', ' ')
+
+print cert
+
+cmd = ('psql','-d','pdns','-c',"UPDATE records SET content = '%s' WHERE type = 'CERT' AND name = '%s';" % (cert, parms.domain))
+proc = subprocess.Popen(cmd, preexec_fn=demote(), stdout = subprocess.PIPE)
+stdout,stderr = proc.communicate()
+print stdout
