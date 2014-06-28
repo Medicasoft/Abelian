@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+#Make self signed certificates
+import argparse, subprocess, sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-cert', nargs='+', help='list of certificates. They should be in PEM format')
+parser.add_argument('-o', '--out', help='output file name')
+
+parms = parser.parse_args()
+certs = parms.cert
+
+if certs == None:
+    certs = []
+    for line in sys.stdin:
+        certs.append(line.replace('\n', ''))
+
+if len(certs) == 0:
+    print 'Empty list of certificates'
+    exit(2)
+
+out = parms.out if parms.out != None else 'bundle.p7b'
+conc = out + '.crt'
+with open(conc, 'w') as fout:
+    for cert in certs:
+        with open(cert, 'r') as fin:
+            fout.write(fin.read())
+
+cmd = ('openssl', 'crl2pkcs', '-nocrl', '-out', out, '-outform', 'der', '-certfile', conc)
+ret = subprocess.call(cmd)
+if ret != 0:
+    exit(ret)
