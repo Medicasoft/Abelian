@@ -7,8 +7,9 @@ var pg = require('pg'),
 	async = require('async'),
 	uuid = require('node-uuid'),
 	anchor = require('./anchor.js'),
-    user = require('./user.js'),
-    config = require('./config.js');
+	user = require('./user.js'),
+	bundle = require('./bundle.js'),
+	config = require('./config.js');
 
 var get_messages_qry = 'SELECT * FROM messages;';
 var get_message_qry = 'SELECT * FROM messages WHERE id = $1;';
@@ -30,7 +31,7 @@ server.post('/Message', restify.bodyParser(), sendMessage);
 server.del('/Message/:id', deleteMessage);
 user.registerRoutes(server);
 anchor.registerRoutes(server);
-
+bundle.registerRoutes(server);
 //start server
 server.listen(port, function() {
 	console.log('%s listening at %s', server.name, server.url);
@@ -50,10 +51,10 @@ function getMessage(req, res, next) {
 		            res.send(500);
 		            return next();
 		        }
-                if (result.rowCount == 0) {
-                    res.send(404);
-                    return next();
-                }
+	                if (result.rowCount == 0) {
+        	            res.send(404);
+                	    return next();
+	                }
 
 		        var msg = result.rows[0].msg;
 		        res.header('Content-Type', 'application/mime');
@@ -160,4 +161,5 @@ function deleteMessage(req, res, next) {
 }
 
 
-
+
+
