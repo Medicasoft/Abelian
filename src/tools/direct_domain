@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse, psycopg2
+import M2Crypto as crypto
 
 def get_cert(path):
     import M2Crypto as crypto
@@ -12,13 +13,17 @@ def get_cert(path):
 
 algorithms = ['hybrid', 'address_cert', 'domain_cert', 'address_ldap', 'domain_ldap', 'local']
 parser = argparse.ArgumentParser()
-parser.add_argument('cmd', choices = ['add', 'set_cert_algo', 'inactivate', 'activate', 'remove'])
-parser.add_argument('-d', '--domain', required = True)
-parser.add_argument('-a', '--algorithm', choices = algorithms, default = 'hybrid')
-parser.add_argument('-c', '--certificate')
-parser.add_argument('-t', '--type', choices = ['local', 'remote'], default = 'local')
+parser.add_argument('cmd', choices = ['add', 'set_cert_algo', 'inactivate', 'activate', 'remove', 'list', 'get_cert'])
+parser.add_argument('-d', '--domain', help='domain name')
+parser.add_argument('-a', '--algorithm', choices = algorithms, default = 'hybrid', help='certificate discovery algorithm')
+parser.add_argument('-c', '--certificate', help='certificate to be used for encrypting mails sent to this domain')
+parser.add_argument('-t', '--type', choices = ['local', 'remote'], default = 'local', help='domain type (local, remote)')
 
 parms = parser.parse_args()
+
+if (parms.cmd != 'list') and (parms.domain == None):
+    print 'Domain name is required'
+    exit(2)
 
 algo = algorithms.index(parms.algorithm)
 cert = psycopg2.Binary(get_cert(parms.certificate)) if parms.certificate != None else None
@@ -41,4 +46,23 @@ elif parms.cmd == 'set_cert_algo':
         print 'Certificate required for <local> discovery algorithm'
         exit(2)
     cur.execute("UPDATE domains SET cert_disco_algo = %s, crypt_cert = %s WHERE name = %s;", (algo, cert, parms.domain))
+elif parms.cmd == 'list':
+    cur.execute('SELECT name, cert_disco_algo, crypt_cert, is_local, active FROM domains;')
+    template = '{0}|{1}|{2}|{3}|{4}'
+    print template.format(*('NAME','ALGO','CERT','LOCAL','ACTIVE'))
+    row = cur.fetchone()
+    while row != None:
+        subj = ''
+        if row[2] != None:
+            cert = crypto.X509.load_cert_der_string(row[2])
+            subj = cert.get_subject()
+        print template.format(*(row[0],algorithms[row[1]],subj,row[3], row[4]))
+        row = cur.fetchone()
+elif parms.cmd == 'get_cert':
+    cur.execute('SELECT crypt_cert FROM domains WHERE name = %s;',(parms.domain,))
+    row = cur.fetchone()
+    if row != None:
+        certfile = parms.certificate if parms.certificate != None else '%s.der' % parms.domain
+        with open(certfile, 'wb') as fp:
+            fp.write(row[0])
 conn.commit()
