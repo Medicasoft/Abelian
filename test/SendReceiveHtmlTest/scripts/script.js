@@ -1,4 +1,6 @@
-var baseUrl = 'http://localhost:8085/';
+var baseUrl = 'http://abelian.medicasoft.us:8085/';
+var senderMailDomain = 'abelian.medicasoft.us';
+
 var sendMessageUrl = baseUrl + 'Message'; //POST
 var listMessagesUrl = baseUrl + 'Messages'; //GET
 var getMessageUrl = baseUrl + 'Message/'; //GET
@@ -56,6 +58,8 @@ function composeMessage(from, to, content) {
     var data = '';
     data += 'from:<' + from + '>\n';
     data += 'to:<' + to + '>\n';
+    data += "Message-ID: <" + Date.now() + "@" + senderMailDomain +">\n";
+    data += "Date: " + "Fri, 27 Jun 2014 14:03:22 +0300\n"; //todo
     data += '\n';
     data += content;
     
@@ -69,7 +73,8 @@ function doSendMessage(data) {
         log('Sent message with HTTP response status code = ' + xhr.status);    
     })
     .fail(function(jqXHR) {
-        log('Send message returned HTTP status code: ' + jqXHR.status);
+        log('Send message returned HTTP status code: ' + jqXHR.status + ' body: ' + jqXHR.responseText);
+        
     }); 
 }
 
@@ -88,26 +93,30 @@ function getMessages() {
     log('Getting messages...');
     $.get(listMessagesUrl)
     .done(function(data) {
-        log('Get messages returned ' + data.count + ' messages');    
-        $('#messagesTable tbody').empty();
-        for(var i in data.messages) {
-            var newRow =  $('<tr><td>'+data.messages[i].id+'</td><td>'+data.messages[i].to+'</td></tr>');
-            newRow.data('link', data.messages[i].id);
+        log('Get messages returned ' + data.totalResults + ' messages');    
+        $('#messagesTable tbody').empty();        
+        for(var i in data.entry) {
+            var newRow =  $('<tr><td>'+data.entry[i].id+'</td><td>'+data.entry[i].to+'</td></tr>');
+            newRow.data('link', data.entry[i].id);
             $('#messagesTable tbody').append(newRow);
         }
     })
     .fail(function(jqXHR) {
-        log('Get messages returned HTTP status code: ' + jqXHR.status);
+        log('Get messages returned HTTP status code: ' + jqXHR.status + ' body: ' + jqXHR.responseText);
     });
 }
 
 function getMessage() {    
     var link = $(this).data('link');
-    $.get(link, function(data) {
+    $.get(link)
+    .done(function(data) {
         log('Get message successfully for id=' + link);
         $('#messagePane').show();
         $('#messageDetailsBody').empty().append(data);
         $('#messageDetailsId').empty().append(link);
+    })
+    .fail(function(jqXHR) {
+        log('Get message returned HTTP status code: ' + jqXHR.status + ' body: ' + jqXHR.responseText);
     });  
 }
 

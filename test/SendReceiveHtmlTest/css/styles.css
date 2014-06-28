@@ -53,7 +53,14 @@
  #messageListHeader button {
     width: 20%;
  }
-  
+
+ #tableDiv {
+ 
+    height: 300px;
+    overflow-y: scroll;
+    
+ }  
+ 
  table {
     border-collapse: collapse;
     width: 100%;
@@ -69,8 +76,7 @@
     width: 50%;
  }
  
- 
- 
+
  #messageDetailsId {
     font-weight: bold;
  }
