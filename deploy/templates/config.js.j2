@@ -1,5 +1,5 @@
-﻿var port = 8085;
-var baseUrl = "{{API_BASE_URL}}:" + port;
+﻿var port = {{API_PORT}};
+var baseUrl = "http://{{API_HOSTNAME}}:" + port;
 if(!/\/$/.test(baseUrl)) //add ending '/' if not exists
     baseUrl += '/';
 

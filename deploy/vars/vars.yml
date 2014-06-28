@@ -3,6 +3,7 @@ MAIL_DOMAIN: "direct.abelian.example.com"
 EXTERNAL_IP: "10.0.0.1"
 SPOOL: "/var/spool/direct"      
 TEMP_SQL_PATH: "/home/sql-direct-tmp"
-API_BASE_URL: "http://abelian.medicasoft.us"
+API_HOSTNAME: "abelian.medicasoft.us"
+API_PORT: 8085
 POSTFIX_PASSWORD: "{{lookup('password', 'credentials/postfixpass length=10')}}"
 ELASTICSEARCH_IP: "10.0.0.1"
