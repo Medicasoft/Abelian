@@ -54,7 +54,7 @@
   sudo: yes
      
 - name: Copy Logstash Init Script
-  copy: src=config/logstash/logstash dest=/etc/init.d/logstash  
+  copy: src=files/logstash dest=/etc/init.d/logstash  
   #notify: 
   #  - Restart logstash
     
