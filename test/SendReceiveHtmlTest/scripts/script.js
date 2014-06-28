@@ -1,5 +1,7 @@
+//CONFIGURATION VARIABLES START - change addresses here 
 var baseUrl = 'http://abelian.medicasoft.us:8085/';
 var senderMailDomain = 'abelian.medicasoft.us';
+//CONFIGURATION VARIABLES END
 
 var sendMessageUrl = baseUrl + 'Message'; //POST
 var listMessagesUrl = baseUrl + 'Messages'; //GET

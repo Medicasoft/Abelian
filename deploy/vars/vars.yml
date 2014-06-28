@@ -9,13 +9,16 @@ POSTFIX_PASSWORD: "{{lookup('password', 'credentials/postfixpass length=10')}}"
 API_HOSTNAME: "abelian.medicasoft.us"
 API_PORT: 8085
 
-#Configure Elastic Search IP and host used by Nginx and Logstash; can be an internal host and port or external host and port 
+#Configure Elastic Search host and port used by Nginx and Logstash; 
+#it can be either an internal host and port (if elasticsearch server is accessible from nginx and logstash with an internal IP / localhost) 
+#or an external host and port 
 ELASTICSEARCH_HOST: "127.0.0.1"
 ELASTICSEARCH_PORT: "9200"
 
 #Configure Elastic Search url used by Kibana
 #it should be the External URL to ElasticSearch (and then the port 80 is FIXED by nginx configuration) e.g. http://external_host:80 
 ELASTICSEARCH_HTTP_URL: "http://abelian.medicasoft.us:80"
+
 
 #kibana
 KIBANA_LOGIN_USERNAME: "abelian"
