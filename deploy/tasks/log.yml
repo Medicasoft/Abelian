@@ -118,5 +118,9 @@
   template: src=templates/nginx_default.j2 dest=/etc/nginx/sites-available/default
   notify: Restart nginx
 
+- name: Install htpasswd dependency passlib
+  apt: name=python-passlib state=present
+  
 - name: Configure password  
   htpasswd: path=/etc/nginx/conf.d/abelian.htpasswd name={{KIBANA_LOGIN_USERNAME}} password={{KIBANA_LOGIN_PASSWORD}} owner=root mode=0640 state=present
+  notify: Restart nginx
