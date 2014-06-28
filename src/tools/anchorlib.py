@@ -29,6 +29,27 @@ def add_anchor(anchor, path, rehash = True):
     
     return 0
 
+def remove(subject_hash, path):
+    from sys import stdin
+    certs = glob.glob(os.path.join(path, '%s.*.pem' % subject_hash))
+    if len(certs) == 0:
+        print 'No anchor found'
+        exit(0)
+    elif len(certs) == 1:
+        os.remove(certs[0])
+        return rehash_store(path)
+    else:
+        print 'Found more than one anchor with the same subject. Choose one:'
+        for i in range(len(certs)):
+            fprint = crypto.X509.load_cert(certs[i]).get_fingerprint()
+            print i,fprint
+        choice = stdin.read(1)
+        if choice.lower() == 'q':
+            exit(0)
+        if choice < len(certs):
+            os.remove(certs[choice])
+            return rehash_store(path)
+
 def remove_anchor(anchor, path, rehash = True):
     subject_hash, fingerprint, pem = get_anchor_info(anchor)
     for fname in glob.glob(os.path.join(path, '%s.*.pem' % subject_hash)):
@@ -46,3 +67,11 @@ def rehash_store(path):
     rehash = subprocess.Popen(['c_rehash', path])
     rehash.communicate()
     return rehash.returncode
+
+def list_anchors(path):
+    certs = glob.glob(os.path.join(path, '*.pem'))
+    for i in range(len(certs)):
+        cert = crypto.X509.load_cert(certs[i])
+        text = cert.get_subject().as_text()
+        shash = hex(cert.get_subject().as_hash())[2:-1]
+        print shash, text

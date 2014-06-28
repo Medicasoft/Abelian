@@ -3,11 +3,11 @@ import argparse, sys, os, glob, subprocess, anchorlib
 
 CADIR = '/var/spool/direct/ca/trust'
 
-parser = argparse.ArgumentParser(description = 'Import trust anchor')
-parser.add_argument('cmd', choices = ['add', 'remove'])
-parser.add_argument('-d', '--domain', required = True)
-parser.add_argument('-f', '--file')
-
+parser = argparse.ArgumentParser()
+parser.add_argument('cmd', choices = ['add', 'remove', 'list'])
+parser.add_argument('-d', '--domain', required = True,help='domain name')
+parser.add_argument('-f', '--file', help='anchor certificate in PEM or DER format')
+parser.add_argument('-s', '--hash', help='certificate subject hash (when removing anchor)')
 parms = parser.parse_args()
 
 store = os.path.join(CADIR, parms.domain.lower())
@@ -15,12 +15,18 @@ if not os.path.isdir(store):
     os.mkdir(store, 0770)
 
 anchor = None
-if parms.file != None:
-    anchor = open(parms.file, 'rb').read()
-else:
-    anchor = sys.stdin.read()
+if (parms.cmd != 'list') and (parms.hash == None):
+    if parms.file != None:
+        anchor = open(parms.file, 'rb').read()
+    else:
+        anchor = sys.stdin.read()
 
 if parms.cmd == 'add':
     anchorlib.add_anchor(anchor, store)
 elif parms.cmd == 'remove':
-    anchorlib.remove_anchor(anchor, store)
+    if parms.hash == None:
+        anchorlib.remove_anchor(anchor, store)
+    else:
+        anchorlib.remove(parms.hash, store)
+elif parms.cmd == 'list':
+    anchorlib.list_anchors(store)
