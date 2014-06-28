@@ -6,22 +6,17 @@ var fs = require("fs");
 var directserver = require('./lib/directserver');
 var mh = require("./lib/mailbbtestcase");
 var utils = require("./lib/utils");
+var config = require("./config");
 
 chai.config.includeStack = true;
 
-var anchorPath = './abelian-test-resources/';
+var aServer = new directserver.DirectServer(config.aServerHost, config.aServerServiceUrl, config.aServerServicePort, config.aServerDomain);
+var bServer = new directserver.DirectServer(config.bServerHost, config.bServerServiceUrl, config.bServerServicePort, config.bServerDomain);
 
-var aServer = new directserver.DirectServer("75.101.217.208", "abelian.medicasoft.us", 8085, "abelian.medicasoft.us"); 
-var bServer = new directserver.DirectServer("54.198.224.233", "pb2.medicasoft.us", 8085, "pb2.medicasoft.us" , anchorPath + 'pb2_root.pem');
-//var aServer = new directserver.DirectServer("54.82.194.32", "pb4.medicasoft.us", 8085, "pb4.medicasoft.us");
+var aUser1 = config.aUser1;
+var aUserInvalid = config.aUserInvalid;
+var bUser1 = config.bUser1;
 
-var aUser1 = "maria@abelian.medicasoft.us";
-var aUserInvalid = "invalidUser@abelian.medicasoft.us";
-var bUser1 = "catalin@pb2.medicasoft.us";
-//var aUser1 = "maria@pb4.medicasoft.us";
-
-var aAnchorPath = anchorPath + 'abelian_root.pem';
-var bAnchorPath = anchorPath + 'pb2_root.pem';
 
 describe("Abelian", function () {
     this.timeout(300000);
@@ -67,7 +62,7 @@ describe("Abelian", function () {
                     user !== null ? cb(null, null) : bServer.addUser(cb, bServer.domain, bUser1);
                 },            
                 function (result, cb) {
-                    readAnchor(cb, aAnchorPath);
+                    utils.readAnchor(cb, config.aAnchorPath);
                 },
                 //upload aDomain1 anchor to B
                 function (anchor, cb) {
@@ -75,7 +70,7 @@ describe("Abelian", function () {
                 },                
                 //get bDomain1 anchor from B   
                 function (result, cb) {
-                    readAnchor(cb, bAnchorPath);
+                    utils.readAnchor(cb, config.bAnchorPath);
                 },
                 //upload bDomain1 anchor to A
                 function (anchor, cb) {
@@ -84,54 +79,22 @@ describe("Abelian", function () {
             ], function(err, result){ done(err); });
         });
 
-        it("should be able to send Direct mail between two different Abelian servers: A -> B", function (done) {
-             mh.run(done, aServer, bServer, generateEmail(aUser1, bUser1, aServer), 'complete'); 
-             //send mail from A to B
-             //expect B has the sent message in messages list
-             //expect A receive successful MDN from B (possible with delay)
+        it("should be able to send Direct mail between two different Abelian servers: A -> B: " +
+            "\n send mail from A to B " + 
+            "\n expect B has the sent message in messages list " + 
+            "\n expect A receive successful MDN from B (possible with delay)", function (done) {            
+            mh.run(done, aServer, bServer, generateEmail(aUser1, bUser1, aServer), 'complete');
         });
 
-        it("should be able to send Direct mail between two different Abelian servers: B -> A", function (done) {
+        it("should be able to send Direct mail between two different Abelian servers: B -> A" +
+            "\n send mail from A to B " +
+            "\n expect B has the sent message in messages list " +
+            "\n expect A receive successful MDN from B (possible with delay)", function (done) {
             mh.run(done, bServer, aServer, generateEmail(bUser1, aUser1, bServer), 'complete');
         });
 
     });
     
-    //describe("End to end negative test with invalid recipient/sender addresses (with mutually trusted recipient and sender domains)", function () {
-    //    it("should raise error when recipient address doesn't exist on recipient server", function (done) {            
-    //        mh.run(done, aServer, aServer, generateEmail(aUser1, aUserInvalid, aServer), 'rejected'); //TODO check expected status
-    //    });
-        
-    //    it("should raise error when sender address doesn't exist on sender server", function (done) {     
-    //        mh.run(done, aServer, aServer, generateEmail(aUserInvalid, aUser1, aServer), 'rejected');
-    //    });
-    //});
-
-
-    //describe("End to end positive test with local domain creation (thus not using the bundled local domain)", function () {
-
-    //    //users exist
-    //    before("create local domain on B with local certificate and load trust anchor in A", function (done) {
-    //        async.series([
-    //            function (cb) { aServer.removeAnchor(cb, aServer.domain, bServer.domain); }
-    //        ], done);
-    //    });
-    //    it("should raise error when trying to send mail from A to B (when B is not trusted by A)", function (done) {
-    //        mh.run(done, aServer, bServer, generateEmail(aUser1, bUser1, aServer), 'rejected'); //TODO status
-    //    });
-    //});
-
-   
-    
-    //describe("End to end negative test when sender finds an invalid certificate for the recipient from DNS", function () {
-    //    before("ensure A (sender) has trust anchor for B (recipient), but B (recipient) doesn't have trust anchor for A (sender)", function (done){
-    //         done();           
-    //    });
-    //    it("should raise error when trying to send/receive mail from A to B (when A is not trusted by B)", function (done) {
-    //        done();
-    //    });
-    //});
-
     describe("End to end negative test | certificate discovery", function () {
         it("should not send email when -> D5 Invalid address-bound certificate discovery in DNS", function (done) {
             var cb = function(err, body) {
@@ -302,21 +265,6 @@ describe("Abelian", function () {
         });
     });
 });
-
-function readAnchor(cb, path) {    
-    fs.readFile(path, {encoding: "UTF-8" }, function(err, data) {							
-        if(err)
-            cb(err);
-        else
-            cb(null, data);
-    });
-}
-
-function getAnchorPath(host) {
-    //return ansibleRunPath + "/certificates/" + host + "/var/spool/direct/ca/ca.pem";
-    return anchorPath + host + '_root.pem';
-
-}
 
 function generateEmail(from, to, senderServer) {
     return {

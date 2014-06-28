@@ -1,4 +1,6 @@
-﻿var ENABLE_LOG = false;
+﻿var fs = require("fs");
+var config = require("../config");
+var ENABLE_LOG = config.enable_log;
 
 module.exports = {
     logMessage: function () {
@@ -20,5 +22,14 @@ module.exports = {
         message += '\n';
         message += email.actual.body;
         return message;
+    },
+
+    readAnchor : function (cb, path) {    
+        fs.readFile(path, {encoding: "UTF-8" }, function(err, data) {							
+            if(err)
+                cb(err);
+            else
+                cb(null, data);
+        });
     }
 };

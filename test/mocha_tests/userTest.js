@@ -1,10 +1,11 @@
 ﻿var chai = require("chai");
 var expect = require("chai").expect;
 var request = require("request");
+var config = require("./config");
 
 chai.config.includeStack = true;
 
-var baseUrl = "http://abelian.medicasoft.us:8085/";
+var baseUrl = config.unitTestBaseUrl;
 var userUrl = baseUrl + 'User';
 var userListUrl  = baseUrl + 'Users';
 
@@ -97,7 +98,7 @@ describe("user", function () {
 
         it("should update the user, get it and compare", function (done) {
             var updatedUser = {
-                "address": "b@b.b",
+                "address": "bb@b.b",
                 "certificate": null
             };
             //put
