@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+#Make self signed certificates
+import argparse, subprocess, os, glob,random
+
+V3RQ = """
+[ req ]
+distinguished_name = req_dn
+req_extensions = v3_ext
+
+[ req_dn ]
+commonName = %s
+
+[ v3_ext ]
+subjectAltName = DNS:%s
+"""
+
+parser = argparse.ArgumentParser()
+parser.add_argument('cmd', choices = ['cert', 'bundle'])
+parser.add_argument('-d', '--domain', required=True)
+
+parms = parser.parse_args()
+
+domain = parms.domain
+if domain == None:
+    print 'Domain parameter is required for "cert" option'
+    exit(2)
+
+cakey = '%s_root.key' % domain
+cacert = '%s_root.pem' % domain
+domkey = '%s.key' % domain
+domcert = '%s.pem' % domain
+domcsr = '%s.csr' % domain
+conf = '%s.conf' % domain
+
+cmd = ('openssl', 'genrsa', '-out', cakey, '2048')
+ret = subprocess.call(cmd)
+if ret != 0:
+    exit(ret)
+
+cmd = ('openssl', 'req', '-new', '-x509', '-days', '365', '-subj', '/CN=%s_ca' % domain, '-key', cakey, '-out', cacert)
+ret = subprocess.call(cmd)
+if ret != 0:
+    exit(ret)
+
+cmd = ('openssl', 'genrsa', '-out', domkey, '2048')
+ret = subprocess.call(cmd)
+if ret != 0:
+    exit(ret)
+
+with open(conf, 'w') as v3conf:
+    v3conf.write(V3RQ % (domain, domain))
+ret = subprocess.call(cmd)
+if ret != 0:
+    exit(ret)
+
+cmd = ('openssl', 'req', '-new', '-subj', '/CN=%s' % domain, '-key', domkey, '-out', domcsr, '-config', conf)
+ret = subprocess.call(cmd)
+if ret != 0:
+    exit(ret)
+
+cmd = ('openssl', 'x509', '-req', '-days', '365', '-in', domcsr, '-CA', cacert, '-CAkey', cakey, '-set_serial', str(random.getrandbits(64)) , '-out', domcert, '-setalias', 'Self Signed SMIME', '-addtrust', 'emailProtection', '-trustout', '-extfile', conf, '-extensions', 'v3_ext')
+ret = subprocess.call(cmd)
+if ret != 0:
+    exit(ret)
