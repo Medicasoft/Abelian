@@ -1,48 +1,73 @@
-#!/usr/bin/python
-import sys,psycopg2
-
-def print_help():
-    print 'Add direct user. Usage:'
-    print ' direct_add_user user@domain Add single user'
-    print ' direct_add_user <file> Add multiple users from file. Separator is \n'
-    exit(0)
+#!/usr/bin/env python
+import sys,argparse,psycopg2,re
 
 def add_multiple_users(fp):
     count = 0
-    for user in sys.stdin:
-        add_single_user(user)
-        count += 1
+    for user in fp:
+        if add_single_user(user.replace('\n','')):
+            count += 1
     return count
 
 def add_single_user(user):
+    if not re.match('[^@]+@[^@]+\.[^@]+',user):
+        print 'Invalid user address: %s' % user
+        return False
     conn = psycopg2.connect(database='maildb', user='direct')
     cur = conn.cursor();
+    cur.execute("SELECT 1 FROM users WHERE address = %s;", (user,))
+    if cur.fetchone() != None:
+        print 'User: %s is already in the database' % user
+        return False
     cur.execute("INSERT INTO users(address,active) VALUES(%s,%s);", (user,'t'))
     conn.commit()
+    return True
 
-if len(sys.argv) == 1:
-    count = add_multiple_users(sys.stdin)
-    if count > 0:
+def remove_user(user):
+    conn = psycopg2.connect(database='maildb', user='direct')
+    cur = conn.cursor();
+    cur.execute("DELETE FROM users WHERE address = %s;", (user,))
+    conn.commit()
+
+def list_users():
+    conn = psycopg2.connect(database='maildb', user='direct')
+    cur = conn.cursor();
+    cur.execute("SELECT address, active FROM users;")
+    template = '{0}|{1}'
+    print template.format(*('ADDRESS','ACTIVE'))
+    row = cur.fetchone()
+    while row != None:
+        print template.format(*row)
+        row = cur.fetchone()
+    conn.commit()
+
+parser = argparse.ArgumentParser()
+parser.add_argument('cmd', choices = ['add', 'remove', 'list'])
+parser.add_argument('-a', '--address', help='user mail address')
+parser.add_argument('-f', '--file', help='file containing list of users')
+parms = parser.parse_args()
+
+if parms.cmd == 'add':
+    if parms.address != None:
+        user = parms.address
+        if add_single_user(user):
+            print 'Added 1 user'
+        exit(0)
+    elif parms.file != None:
+        with open(parms.file) as fin:
+            count = add_multiple_users(fin)
+            print 'Added %s users' % count
+            exit(0)
+    else:
+        count = add_multiple_users(sys.stdin)
         print 'Added %s users' % count
         exit(0)
+elif parms.cmd == 'remove':
+    if parms.address == None:
+        print 'Address parameter is required'
+        exit(2)
     else:
-        print_help()
+        remove_user(parms.address)
         exit(0)
-
-if sys.argv[1] == '-h':
-    print_help()
+elif parms.cmd == 'list':
+    list_users()
     exit(0)
-
-user = sys.argv[1]
-if '@' in user:
-    add_single_user(user)
-    print 'Added 1 user'
-    exit(0)
-else:
-    count = add_multiple_users(sys.stdin)
-    if count > 0:
-        print 'Added %s users' % count
-        exit(0)
-    else:
-        print_help()
-        exit(0)
