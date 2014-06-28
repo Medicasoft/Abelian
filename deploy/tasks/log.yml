@@ -122,5 +122,5 @@
   apt: name=python-passlib state=present
   
 - name: Configure password  
-  htpasswd: path=/etc/nginx/conf.d/abelian.htpasswd name={{KIBANA_LOGIN_USERNAME}} password={{KIBANA_LOGIN_PASSWORD}} owner=root mode=0640 state=present
+  htpasswd: path=/etc/nginx/conf.d/abelian.htpasswd name={{KIBANA_LOGIN_USERNAME}} password={{KIBANA_LOGIN_PASSWORD}} owner=root group=www-data mode=0640 state=present
   notify: Restart nginx
