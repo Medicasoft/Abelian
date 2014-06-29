@@ -21,6 +21,17 @@ var bUser1 = config.bUser1;
 describe("Abelian", function () {
     this.timeout(300000);
     
+    // before("fresh setup", function (done) {
+        // utils.logMessage("fresh setup");
+        // async.series([
+               // function (cb) { aServer.deleteAllAnchors(cb); },
+               // function (cb) { aServer.deleteAllMessages(cb); },
+               // function (cb) { bServer.deleteAllAnchors(cb); },
+               // function (cb) { bServer.deleteAllMessages(cb); },
+        // ], done);
+    // });
+
+
     describe("End to end negative test for sending A->B when recipient domain B doesn't trust domain A", function () {
         before("remove trust anchor B from server A", function (done) {
             async.series([
@@ -60,7 +71,7 @@ describe("Abelian", function () {
                 //add user to local domain bDomain1 on B
                 function (user, cb) {
                     user !== null ? cb(null, null) : bServer.addUser(cb, bServer.domain, bUser1);
-                },            
+                },
                 function (result, cb) {
                     utils.readAnchor(cb, config.aAnchorPath);
                 },
@@ -264,6 +275,26 @@ describe("Abelian", function () {
             ], function (err, result) { done(err); });
         });
     });
+
+
+    // describe("Test remove anchor from server", function () {
+        // it("should not hang/error on remove anchor when no anchors exist", function (done) {
+            // async.series([
+               // function (cb) { aServer.deleteAllAnchors(cb); },
+               // function (cb) { aServer.removeAnchor(cb, aServer.domain, bServer.domain); },
+               // function (cb) { aServer.removeAnchor(cb, aServer.domain, bServer.domain); }
+            // ], done);
+        // });
+    // });
+
+    // describe("Test remove messages from server", function () {
+        // it("should not find messages after removing all messages", function (done) {
+            // async.series([
+               // function (cb) { aServer.deleteAllMessages(cb); },
+               // function (cb) { aServer.listMessages(function (err, res) { expect(err).to.not.exist; expect(res.totalResults).to.be.empty; cb(null); }); },
+            // ], done);
+        // });
+    // });
 });
 
 function generateEmail(from, to, senderServer) {
