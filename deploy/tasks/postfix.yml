@@ -91,14 +91,18 @@
      with_items:
         - virtual_mailbox_maps.cf
         - virtual_mailbox_domains.cf
-     
+        
+  - name: Add local domain to domains database
+    command: direct_domain add -d {{MAIL_DOMAIN}} -t local
+    sudo_user: direct
+
    - name: Edit postfix config file and service entries
      command: postconf {{item}}
      with_items:
         - "-e 'mydestination = localhost'"
         - "-e 'mailbox_transport = direct-rx'"
         - "-e 'virtual_transport = direct-rx'"
-        - "-e 'virtual_mailbox_domains = {{MAIL_DOMAIN}}'"
+        - "-e 'virtual_mailbox_domains =pgsql:/etc/postfix/pgsql/virtual_mailbox_domains.cf'"
         - "-e 'virtual_mailbox_maps = pgsql:/etc/postfix/pgsql/virtual_mailbox_maps.cf'"
         - "-M direct-rx/unix='direct-rx unix - n n - - pipe flags=RXq user=direct argv=/var/spool/direct/smimercv.py ${queue_id} ${recipient} ${sender}'"
      notify: 
