@@ -93,7 +93,7 @@
         - virtual_mailbox_domains.cf
         
    - name: Add local domain to domains database
-     command: direct_domain add -d {{MAIL_DOMAIN}} -t local
+     command: "{{SPOOL}}/tools/direct_domain add -d {{MAIL_DOMAIN}} -t local"
      sudo_user: direct
 
    - name: Edit postfix config file and service entries
