@@ -9,9 +9,10 @@ var pg = require('pg'),
 	anchor = require('./anchor.js'),
 	user = require('./user.js'),
 	bundle = require('./bundle.js'),
-	config = require('./config.js');
+	config = require('./config.js'),
+    resources = require('./resources.js');
 
-var get_messages_qry = 'SELECT * FROM messages;';
+//var get_messages_qry = 'SELECT * FROM messages LIMIT $1 OFFSET $2;';
 var get_message_qry = 'SELECT * FROM messages WHERE id = $1;';
 var del_message_qry = 'DELETE FROM messages WHERE id = $1;';
 
@@ -65,41 +66,45 @@ function getMessage(req, res, next) {
 }
 
 function getMessages(req, res, next) {
-	pg.connect(connString, function(err, client, done) {  
-		if(err) {
-			console.error('error fetching client from pool', err);
-			res.send(500);
-			return next();
-		} else {
-		    client.query(get_messages_qry, function (err, result) {
-		        done();
-		        if (err) {
-		            console.error('error running query', err);
-		            res.send(500);
-		            return next();
-		        }
-
-		        var count = result.rows.length;
-		        var msgs = {
-		            totalResults: count,
-		            entry: []
-		        };
-
-		        for (var i = 0; i < count; i++) {
-		            var row = result.rows[i];
-		            var message = {
-		                id: baseUrl + 'Message/' + row.id, //full GET url
-		                to: row.recipient //,
-		                //size : row.messagesize,
-		                //status : row.status
-		            };
-		            msgs.entry.push(message);
-		        }
-		        res.send(200, msgs);
-		    });
-		}
-	});
+    resources.getEntities(req, res, next, 'Message');
 }
+
+//function getMessages(req, res, next) {   
+//	pg.connect(connString, function(err, client, done) {  
+//		if(err) {
+//			console.error('error fetching client from pool', err);
+//			res.send(500);
+//			return next();
+//		} else {
+//		    client.query(get_messages_qry, function (err, result) {
+//		        done();
+//		        if (err) {
+//		            console.error('error running query', err);
+//		            res.send(500);
+//		            return next();
+//		        }
+
+//		        var count = result.rows.length;
+//		        var msgs = {
+//		            totalResults: count,
+//		            entry: []
+//		        };
+
+//		        for (var i = 0; i < count; i++) {
+//		            var row = result.rows[i];
+//		            var message = {
+//		                id: baseUrl + 'Message/' + row.id, //full GET url
+//		                to: row.recipient //,
+//		                //size : row.messagesize,
+//		                //status : row.status
+//		            };
+//		            msgs.entry.push(message);
+//		        }
+//		        res.send(200, msgs);
+//		    });
+//		}
+//	});
+//}
 
 function sendMessage(req, res, next) {
 	async.waterfall([
