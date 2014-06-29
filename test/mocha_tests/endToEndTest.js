@@ -72,21 +72,36 @@ describe("Abelian", function () {
                 function (user, cb) {
                     user !== null ? cb(null, null) : bServer.addUser(cb, bServer.domain, bUser1);
                 },
-                function (result, cb) {
-                    utils.readAnchor(cb, config.aAnchorPath);
-                },
-                //upload aDomain1 anchor to B
+                //check whether the A anchor exists on B server
                 function (anchor, cb) {
-                    bServer.addAnchor(cb, bServer.domain, aServer.domain, anchor);
-                },                
-                //get bDomain1 anchor from B   
-                function (result, cb) {
-                    utils.readAnchor(cb, config.bAnchorPath);
+                    bServer.findAnchor(cb, bServer.domain, aServer.domain);
                 },
-                //upload bDomain1 anchor to A
                 function (anchor, cb) {
-                    aServer.addAnchor(cb, aServer.domain, bServer.domain, anchor);
-                }
+                    if (anchor == null) {
+                        async.waterfall([
+                            function (cb2) { utils.readAnchor(cb2, config.aAnchorPath); },
+                             //upload aDomain1 anchor to B
+                            function (anchor, cb2) { bServer.addAnchor(cb2, bServer.domain, aServer.domain, anchor); }
+                        ], cb);
+                    }
+                    else
+                        cb(null, null);
+                },
+                //check whether the B anchor exists on A server    
+                function (anchor, cb) {
+                    aServer.findAnchor(cb, aServer.domain, bServer.domain);
+                },
+                function (anchor, cb) {
+                    if (anchor == null) {
+                        async.waterfall([
+                            function (cb2) { utils.readAnchor(cb2, config.bAnchorPath); },
+                             //upload B anchor to A
+                            function (anchor, cb2) { aServer.addAnchor(cb2, aServer.domain, bServer.domain, anchor); }
+                        ], cb);
+                    }
+                    else
+                        cb(null, null);
+                },
             ], function(err, result){ done(err); });
         });
 
@@ -103,7 +118,6 @@ describe("Abelian", function () {
             "\n expect A receive successful MDN from B (possible with delay)", function (done) {
             mh.run(done, bServer, aServer, generateEmail(bUser1, aUser1, bServer), 'complete');
         });
-
     });
     
     describe("End to end negative test | certificate discovery", function () {

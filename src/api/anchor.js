@@ -1,7 +1,8 @@
 var restify = require('restify'),
 	pg = require('pg'),
 	cp = require('child_process'),
-	config = require('./config.js');
+	config = require('./config.js'),
+	resources = require('./resources');
 
 var connString = config.connString;
 var baseUrl = config.baseUrl;
@@ -10,6 +11,8 @@ module.exports = {
 	registerRoutes : registerRoutes
 };
 
+
+// anchor routes
 function registerRoutes(server) {
 	server.post('/Anchor', restify.bodyParser(), createAnchor);
 	server.del('/Anchor/:id', deleteAnchor);
@@ -18,40 +21,100 @@ function registerRoutes(server) {
 	server.put('/Anchor/:id', restify.bodyParser(), updateAnchor);
 }
 
-var resources = {
-    anchor: {
-        queries: {
-            list: 'SELECT * FROM anchors;',
-            get: 'SELECT * FROM anchors WHERE id=$1;',
-            create: 'INSERT INTO anchors(local_domain_name, domain_name, cert) VALUES ($1, $2, $3) RETURNING id;',
-            update: 'UPDATE anchors SET local_domain_name=$2, domain_name=$3, cert=$4 WHERE id=$1;',
-            delete: 'DELETE FROM anchors WHERE id = $1;'
-        },
-        toJson: anchorToJson
+function createAnchor(req, res, next) {
+    if (req.body.local_domain_name === undefined) {
+        res.send(400, 'local_domain_name is mandatory');
+        return next();
+    }
+    if (req.body.cert === undefined) {
+        res.send(400, 'cert is mandatory');
+        return next();
+    }
+
+    //when both local_doman and domain are specified, check if anchor exists => update it, else => add it
+    if (req.body.domain_name !== undefined) {
+        findByLocalDomainAndDomain(req.body.local_domain_name, req.body.domain_name, function (err, anchor) {
+            if (err) {
+                console.error('Error when searching for anchors: ', err);
+                res.send(500);
+                return next();
+            }
+            if (anchor == null)
+                doCreateAnchor(req, res, next);
+            else {//exists               
+                doUpdateAnchor(req, res, next);
+            }
+        });
+    }
+    else {
+        findByLocalDomainAndCert(req.body.local_domain_name, req.body.cert, function (err, anchor) {
+            if (err) {
+                console.error('Error when searching for anchors: ', err);
+                res.send(500);
+                return next();
+            }
+            if (anchor == null)
+                doCreateAnchor(req, res, next);
+            else {//exists               
+                res.send(200);
+                return next();
+            }
+        });
     }
 }
 
-// anchor routes
-
-function createAnchor (req, res, next) {
-
-	var child = cp.exec('/var/spool/direct/tools/direct_anchor -d ' + req.body.local_domain_name + ' add', function(err, stdout, stderr) {
-		if (stderr !== '') {
-			console.error('direct_anchor stderr: ' + stderr);
-			res.send(500, stderr);
-			return next();
-		}
-		executeSql(req, res, next, 'Anchor', 'create',
-        		[req.body.local_domain_name, req.body.domain_name, req.body.cert], 201);
-		return next();
-	});
-	child.stdin.write(req.body.cert);
-	child.stdin.end();
-	return next();
+function doCreateAnchor(req, res, next) {
+    var child = cp.exec('/var/spool/direct/tools/direct_anchor -d ' + req.body.local_domain_name + ' add', function (err, stdout, stderr) {
+        if (stderr !== '') {
+            console.error('direct_anchor stderr: ' + stderr);
+            res.send(500, stderr);
+            return next();
+        }
+        executeSql(req, res, next, 'Anchor', 'create',
+                [req.body.local_domain_name, req.body.domain_name, req.body.cert], 201);
+        return next();
+    });
+    child.stdin.write(req.body.cert);
+    child.stdin.end();
+    return next();
+}
+function findByLocalDomainAndDomain(local_domain, domain, callback) {    
+    var find_qry = resources['anchor'].queries.findByLocalDomainAndDomain;
+    findAnchors(find_qry, [local_domain, domain], callback);
 }
 
+function findByLocalDomainAndCert(local_domain, cert, callback) {
+    var find_qry = resources['anchor'].queries.findByLocalDomainAndCert;
+    findAnchors(find_qry, [local_domain, cert], callback);
+}
+
+function findAnchors(find_qry, args,  callback) {
+    pg.connect(connString, function (err, client, done) {
+        if (err) {
+            callback(err);
+            return;
+        } else {
+            client.query(find_qry, args, function (err, result) {
+                done();
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                if (result.rowCount == 0) {
+                    callback(null, null);
+                }
+                else
+                    callback(null, result.rows[0]);
+            });
+        }
+    });
+}
+
+
+
+
 function deleteAnchor (req, res, next) {
-   var entityToJson = resources['anchor'].toJson;
+    var entityToJson = resources['anchor'].toJson;
     var get_qry = resources['anchor'].queries['get'];
     pg.connect(connString, function (err, client, done) {
         if (err) {
@@ -72,42 +135,68 @@ function deleteAnchor (req, res, next) {
                 }
                 var entity = entityToJson(result.rows[0]);
 		
-		var child = cp.exec('/var/spool/direct/tools/direct_anchor -d ' + entity.local_domain_name + ' remove', function(err, stdout, stderr) {
+		        var child = cp.exec('/var/spool/direct/tools/direct_anchor -d ' + entity.content.local_domain_name + ' remove', function(err, stdout, stderr) {
         	        if (stderr !== '') {
-                	        console.error('direct_anchor stderr: ' + stderr);
-				res.send(500, stderr);
-				return next();
-			}
-			executeSql(req, res, next, 'Anchor', 'delete', [req.params.id], 204);
-	                return next();
-	        });
-	        child.stdin.write(entity.cert);
-	        child.stdin.end();
-	        return next();
-	     });
+                	    console.error('direct_anchor stderr: ' + stderr);
+				    res.send(500, stderr);
+				    return next();
+			    }
+			    executeSql(req, res, next, 'Anchor', 'delete', [req.params.id], 204);
+	                    return next();
+	            });
+	            child.stdin.write(entity.content.cert);
+	            child.stdin.end();
+	            return next();
+	         });
         }
-    });
-        
+    });        
 }
 
-function updateAnchor (req, res, next) {
-	var child = cp.exec('/var/spool/direct/tools/direct_anchor -d ' + req.body.local_domain_name + ' add', function(err, stdout, stderr) {
-		if (stderr !== '') {
-			console.error('direct_anchor stderr: ' + stderr);
-			res.send(500, stderr);
-			return next();
-		}
-		    executeSql(req, res, next, 'Anchor', 'update',
-		        [req.params.id, req.body.local_domain_name, req.body.domain_name, req.body.cert], 200);
-		return next();
-	});
-	child.stdin.write(req.body.cert);
-	child.stdin.end();
-	return next();
+function updateAnchor(req, res, next) {
+    var get_qry = resources[type.toLowerCase()].queries['get'];
+
+    pg.connect(connString, function (err, client, done) {
+        if (err) {
+            console.error('error fetching client from pool', err);
+            res.send(500);
+            return next();
+        } else {
+            client.query(get_qry, [req.params.id], function (err, result) {
+                done();
+                if (err) {
+                    console.error('error running query', err);
+                    res.send(500);
+                    return next();
+                }
+                if (result.rowCount == 0) {
+                    res.send(404);
+                    return next();
+                }
+
+                doUpdateAnchor(req, res, next);
+            });
+        }
+    });
+}
+
+function doUpdateAnchor(req, res, next) {
+    var child = cp.exec('/var/spool/direct/tools/direct_anchor -d ' + req.body.local_domain_name + ' add', function (err, stdout, stderr) {
+        if (stderr !== '') {
+            console.error('direct_anchor stderr: ' + stderr);
+            res.send(500, stderr);
+            return next();
+        }
+        executeSql(req, res, next, 'Anchor', 'update',
+            [req.params.id, req.body.local_domain_name, req.body.domain_name, req.body.cert], 200);
+        return next();
+    });
+    child.stdin.write(req.body.cert);
+    child.stdin.end();
+    return next();
 }
 
 function getAnchors (req, res, next) {
-    getEntities(req, res, next, 'Anchor');
+    resources.getEntities(req, res, next, 'Anchor');
 }
 function getAnchor (req, res, next) {
     getEntity(req, res, next, 'Anchor');
@@ -135,21 +224,11 @@ function getEntity(req, res, next, type) {
                     res.send(404);
                     return next();
                 }
-                var entity = entityToJson(result.rows[0]);
-		delete entity.id;
-                res.send(200, entity);
+                var entity = entityToJson(result.rows[0]);		        
+                res.send(200, entity.content);
             });
         }
     });
-}
-
-function anchorToJson(row) {
-    return {
-        id: baseUrl + 'Anchor/' + row.id,
-        local_domain_name: row.local_domain_name,
-        domain_name: row.domain_name,
-        cert: row.cert
-        }
 }
 
 
@@ -183,42 +262,3 @@ function executeSql(req, res, next, type, queryType, params, successCode) {
     });
 }
 
-function getEntities(req, res, next, type) {
-    var get_qry = resources[type.toLowerCase()].queries['list'];
-    var entityToJson = resources[type.toLowerCase()].toJson;
-
-    pg.connect(connString, function (err, client, done) {
-        if (err) {
-            console.error('error fetching client from pool', err);
-            res.send(500);
-            return next();
-        } else {
-            client.query(get_qry, function (err, result) {
-                done();
-                if (err) {
-                    console.error('error running query', err);
-                    res.send(500);
-                    return next();
-                }
-
-                var totalResults = result.rows.length;
-                var entities = {
-                    totalResults: totalResults,
-                    entry: []
-                };
-
-                for (var i = 0; i < totalResults; i++) {
-                    var row = result.rows[i];
-                    var entity = entityToJson(row);
-                    var idd = entity.id;
-		    delete entity.id;
-		    entities.entry.push({
-                        id: idd,
-                        content: entity
-                    });
-                }
-                res.send(200, entities);
-            });
-        }
-    });
-}

@@ -7,11 +7,10 @@ var connString = config.connString;
 var port = config.port;
 var baseUrl = config.baseUrl;
 
-module.exports = {
-    getEntities: getEntities
-}
 
 var resources = {
+    getEntities: getEntities,
+
     user: {
         queries: {
             list: 'SELECT * FROM users %s LIMIT $1 OFFSET $2;',
@@ -47,9 +46,22 @@ var resources = {
         },
         toJson: messageToJson,
         urlSearchFragment: "Messages"
+    },
+    anchor: {
+        queries: {
+            list: 'SELECT * FROM anchors %s LIMIT $1 OFFSET $2;',
+            get: 'SELECT * FROM anchors WHERE id=$1;',
+            create: 'INSERT INTO anchors(local_domain_name, domain_name, cert) VALUES ($1, $2, $3) RETURNING id;',
+            update: 'UPDATE anchors SET local_domain_name=$2, domain_name=$3, cert=$4 WHERE id=$1;',
+            delete: 'DELETE FROM anchors WHERE id = $1;',
+            count: 'SELECT count(*) from anchors %s;',
+            findByLocalDomainAndDomain: "SELECT * FROM anchors where local_domain_name=$1 and domain_name=$2 limit 1;",
+            findByLocalDomainAndCert: "SELECT * FROM anchors where local_domain_name=$1 and cert=$2 limit 1;",
+        },
+        toJson: anchorToJson,
+        urlSearchFragment: "Anchors"
     }
 }
-
 
 
 function userToJson(row) {
@@ -85,6 +97,18 @@ function messageToJson(row) {
         }
     };
 }
+
+function anchorToJson(row) {
+    return {
+        id: baseUrl + 'Anchor/' + row.id,
+        content: {
+            local_domain_name: row.local_domain_name,
+            domain_name: row.domain_name,
+            cert: row.cert
+        }
+    }
+}
+
 
 function getEntities(req, res, next, type) {
     var meta = resources[type.toLowerCase()];
@@ -206,3 +230,6 @@ function getEntities(req, res, next, type) {
 
 }
 
+
+
+module.exports = resources;
