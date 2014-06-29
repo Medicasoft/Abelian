@@ -5,10 +5,7 @@
 var url = require('url');
 var request = require('request');
 var utils = require("./utils");
-//var nimble = require('nimble');
-//var path = require('path');
-
-//var fileutil = require('./fileutil');
+var async = require("async");
 
 var DirectServer = function(host, serviceUrl, servicePort, domain) {
     this.host = host;
@@ -63,12 +60,23 @@ DirectServer.prototype.removeAnchor = function (callback, local_domain, domain) 
             return;
         }
         if (anchor != null) {
+            utils.logMessage("Anchor existed, removing");
             var url = anchor.id;
             utils.logMessage("...removing server anchor " + url);
             requestCall(callback, url, 'DELETE', 204);
         }
+        else {
+            utils.logMessage("Anchor did not exist, ok!");
+            callback(null, null); //no anchor found
+        }
     }
     this.findAnchor(remove, local_domain, domain);
+};
+
+DirectServer.prototype.removeAnchorById = function (callback, id) {   
+    var url = id;
+    utils.logMessage("...removing server anchor " + url);
+    requestCall(callback, url, 'DELETE', 204);
 };
 
 DirectServer.prototype.findAnchor = function (callback, local_domain, domain) {    
@@ -89,14 +97,16 @@ DirectServer.prototype.findAnchor = function (callback, local_domain, domain) {
 };
 
 DirectServer.prototype.deleteAllAnchors = function (callback) {
+    utils.logMessage("...deleting all server anchors " + this.host);
+    var that = this;
     this.listAnchors(function (err, anchors) {
         if (err) {
             callback(err);
             return;
         }
-        var resAnchors = [];
-        async.each(anchors.entry, function (cb, e) {
-            this.removeAnchor(cb, e.id);
+        var resAnchors = [];        
+        async.each(anchors.entry, function (e, cb) {
+            that.removeAnchorById(cb, e.id);
         }, callback);
     });
 };
@@ -189,3 +199,22 @@ DirectServer.prototype.getMessage = function (callback, url) {
     requestCall(callback, url, 'GET', 200);
 };
 
+DirectServer.prototype.deleteMessage = function (callback, url) {
+    utils.logMessage("...deleting message " + url);
+    requestCall(callback, url, 'DELETE', 204);
+};
+
+DirectServer.prototype.deleteAllMessages = function (callback) {
+    utils.logMessage("...deleting all server messages " + this.host);
+    var that = this;
+    this.listMessages(function (err, msgs) {
+        if (err) {
+            callback(err);
+            return;
+        }
+        
+        async.each(msgs.entry, function (e, cb) {
+            that.deleteMessage(cb, e.id);
+        }, callback);
+    });
+};

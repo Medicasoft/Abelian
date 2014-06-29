@@ -2,15 +2,18 @@
 var config = require("../config");
 var ENABLE_LOG = config.enable_log;
 
+var logMessage = function () {
+    if (ENABLE_LOG)
+        console.log.apply(this, arguments);
+};
+var logError = function () {
+    if (ENABLE_LOG)
+        console.error.apply(this, arguments);
+};
+
 module.exports = {
-    logMessage: function () {
-        if (ENABLE_LOG)
-            console.log.apply(this, arguments);
-    },
-    logError: function () {
-        if (ENABLE_LOG)
-            console.error.apply(this, arguments);
-    },
+    logMessage: logMessage,
+    logError: logError,
 
     generateMessage: function (email) {
         var message = '';
@@ -26,10 +29,14 @@ module.exports = {
 
     readAnchor : function (cb, path) {    
         fs.readFile(path, {encoding: "UTF-8" }, function(err, data) {							
-            if(err)
+            if (err) {
+                logError('Path cannot be read! ' + path);
                 cb(err);
-            else
+            }
+            else {
+                logMessage('Path was read: ' + path + " with data.length " + data.length);
                 cb(null, data);
+            }
         });
     }
 };
