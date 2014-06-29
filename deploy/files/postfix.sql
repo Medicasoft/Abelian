@@ -2,6 +2,8 @@ CREATE TABLE IF NOT EXISTS users
 (
   id serial NOT NULL,
   address character varying NOT NULL UNIQUE,
+  userName character varying,
+  domain character varying,
   certificate bytea,
   active boolean DEFAULT 't',
   CONSTRAINT pk PRIMARY KEY (id)
@@ -12,7 +14,34 @@ WITH (
 
 ALTER TABLE users
     OWNER TO direct;
+
+-- users trigger on address insert or update
+    
+CREATE OR REPLACE FUNCTION setUserDetails() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+  userNameP varchar(100);
+  domainP varchar(100);
+  address varchar(200);
+  i int;
+BEGIN
+  address := NEW.address;  
+  i := position('@' in address);    
+  userNameP := substring(address from 0 for i);
+  domainP := substring(address from i+1);
+
+  UPDATE users SET userName=userNameP, domain=domainP WHERE id=NEW.id;
   
+  RETURN NEW;
+END
+$$;
+
+
+DROP TRIGGER IF EXISTS userAddressTrigger on users;
+
+CREATE TRIGGER userAddressTrigger AFTER INSERT OR UPDATE OF address ON users
+FOR EACH ROW EXECUTE PROCEDURE setUserDetails();
+  
+    
   
 CREATE TABLE IF NOT EXISTS messages
 (
