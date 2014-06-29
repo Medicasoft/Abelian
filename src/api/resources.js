@@ -150,7 +150,7 @@ function getEntities(req, res, next, type) {
                         cb(new Error('error running query - ' + err));
                     }
                     else
-                        cb(null, result.rows[0].count);
+                        cb(null, new Number(result.rows[0].count));
                 });
             },
             //get paged result
