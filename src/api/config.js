@@ -6,5 +6,8 @@ if(!/\/$/.test(baseUrl)) //ensure it ends with '/'
 module.exports = {
     connString: "/var/run/postgresql maildb",
     port: port,
-    baseUrl: baseUrl
+    baseUrl: baseUrl,
+
+    //paging for resource search 
+    pageSize: 10
 };

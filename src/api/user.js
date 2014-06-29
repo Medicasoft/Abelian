@@ -3,33 +3,39 @@
     fs = require('fs'),
     cp = require('child_process'),
     guid = require('node-uuid'),
-    config = require('./config.js');
+    config = require('./config.js'),
+    async = require("async");
 
 var connString = config.connString;
 var baseUrl = config.baseUrl;
 var tempPath = '/var/spool/direct/tmp/';
 var toolsPath = '/var/spool/direct/tools/';
 
+
 var resources = {
     user: {
         queries: {
-            list: 'SELECT * FROM users;',
+            list: 'SELECT * FROM users LIMIT $1 OFFSET $2;',
             get: 'SELECT * FROM users WHERE id=$1;',
             create: 'INSERT INTO users(address, certificate) VALUES ($1, $2) RETURNING id',
             update: 'UPDATE users SET address=$2, certificate=$3 WHERE id=$1;',
-            delete: 'DELETE FROM users WHERE id = $1;'
+            delete: 'DELETE FROM users WHERE id = $1;',
+            count: 'SELECT count(*) from users;'
         },
-        toJson: userToJson
+        toJson: userToJson,
+        urlSearchFragment: "Users"
     },
     domain: {
         queries: {
-            list: 'SELECT * FROM domains;',
-            get: 'SELECT * FROM domains WHERE id=$1;'
+            list: 'SELECT * FROM domains LIMIT $1 OFFSET $2;',
+            get: 'SELECT * FROM domains WHERE id=$1;',
+            count: 'SELECT count(*) from domains;'
  //           create: 'INSERT INTO domains(name, anchor_path, crl_path, crypt_cert, cert_disco_algo) VALUES ($1, $2, $3, $4, $5) RETURNING id;',
  //           update: 'UPDATE domains SET name=$2, anchor_path=$3, crl_path=$4, crypt_cert=$5, cert_disco_algo=$6 WHERE id=$1;',
  //           delete: 'DELETE FROM domains WHERE id = $1;'
         },
-        toJson: domainToJson
+        toJson: domainToJson,
+        urlSearchFragment: "Domains"
     }
 }
 
@@ -224,41 +230,103 @@ function getEntity(req, res, next, type) {
 
 
 function getEntities(req, res, next, type) {
-    var get_qry = resources[type.toLowerCase()].queries['list'];
-    var entityToJson = resources[type.toLowerCase()].toJson;
-
+    var meta = resources[type.toLowerCase()];
+    var page = req.query.page === undefined ? 1 : new Number(req.query.page);
+    if (isNaN(page) || page <= 0) {
+        res.send(400, "Parameter 'page' expects a number greater than 0");
+        cb(null);
+    }
+    
     pg.connect(connString, function (err, client, done) {
         if (err) {
             console.error('error fetching client from pool', err);
             res.send(500);
             return next();
-        } else {
-            client.query(get_qry, function (err, result) {
-                done();
-                if (err) {
-                    console.error('error running query', err);
-                    res.send(500);
-                    return next();
-                }
-
-                var totalResults = result.rows.length;
-                var entities = {
-                    totalResults: totalResults,
-                    entry: []
-                };
-
-                for (var i = 0; i < totalResults; i++) {
-                    var row = result.rows[i];
-                    var entity = entityToJson(row);
-                    entities.entry.push({
-                        id: entity.id,
-                        content: entity.content
-                    });
-                }
-                res.send(200, entities);
-            });
         }
+
+        async.waterfall([
+            //count
+            function (cb) {
+                var count_qry = meta.queries['count'];
+                client.query(count_qry, function (err, result) {
+                    done();
+                    if (err) {
+                        cb(new Error('error running query - ' + err));
+                    }
+                    else
+                        cb(null, result.rows[0].count);
+                });
+            },
+            //get paged result
+            function (totalResults, cb) {  
+                var get_qry = meta.queries['list'];
+                var limit = 'ALL';
+                var offset = 0;
+               
+                if (config.pageSize) {
+                    limit = config.pageSize;
+                    if (page) {                        
+                        offset =  (page - 1) * config.pageSize;
+                    }
+                }
+                if (offset && offset >= totalResults) {
+                    res.send(404);
+                    cb(null);
+                }
+
+                var entityToJson = meta.toJson;
+
+                client.query(get_qry, [limit, offset], function (err, result) {
+                    done();
+                    if (err) {
+                        console.error('error running query', err);
+                        res.send(500);
+                        return next();
+                    }
+
+                    var searchUrl = baseUrl + "/" + meta.urlSearchFragment;
+                    var currentPage = page ? page : 1;
+                    var nextPage = totalResults > offset + limit ? currentPage + 1 : undefined;
+                    var prevPage = offset > 0 ? currentPage - 1 : undefined;
+
+                    var entities = {
+                        totalResults: totalResults,
+                        link: [
+                            {
+                                rel: "self",
+                                href: searchUrl + "?page="+currentPage
+                            }
+                        ],
+                        entry: []
+                    };
+                    
+                    if (prevPage)
+                        entities.link.push({ rel: "previous", href: searchUrl + "?page=" + prevPage });
+
+                    if (nextPage)
+                        entities.link.push({ rel: "next", href: searchUrl + "?page=" + nextPage });                    
+
+                    for (var i = 0; i < result.rows.length; i++) {
+                        var row = result.rows[i];
+                        var entity = entityToJson(row);
+                        entities.entry.push({
+                            id: entity.id,
+                            content: entity.content
+                        });
+                    }
+                    res.send(200, entities);
+                });
+            }],
+            //callback
+            function (err) {
+                if (err) {
+                    console.error(err);
+                    res.send(500);
+                }
+                return next();
+            });
     });
+
 }
 
 
