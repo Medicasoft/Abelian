@@ -15,7 +15,7 @@ subjectAltName = DNS:%s
 """
 
 parser = argparse.ArgumentParser()
-parser.add_argument('cmd', choices = ['cert', 'bundle'])
+#parser.add_argument('cmd', choices = ['cert', 'bundle'])
 parser.add_argument('-d', '--domain', required=True)
 
 parms = parser.parse_args()
