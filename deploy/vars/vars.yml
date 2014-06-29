@@ -1,11 +1,9 @@
 DOMAIN: "abelian.example.com"
 MAIL_DOMAIN: "direct.abelian.example.com"
+#External IP for DOMAIN
 EXTERNAL_IP: "10.0.0.1"
-SPOOL: "/var/spool/direct"      
-TEMP_SQL_PATH: "/home/sql-direct-tmp"
-POSTFIX_PASSWORD: "{{lookup('password', 'credentials/postfixpass length=10')}}"
 
-#Node.js API - used to build resource urls in service responses
+#Node.js API - host and port used to build resource urls in service responses
 API_HOSTNAME: "abelian.medicasoft.us"
 API_PORT: 8085
 
@@ -19,8 +17,12 @@ ELASTICSEARCH_PORT: "9200"
 #it should be the External URL to ElasticSearch (and then the port 80 is FIXED by nginx configuration) e.g. http://external_host:80 
 ELASTICSEARCH_HTTP_URL: "http://abelian.medicasoft.us:80"
 
-
 #kibana
 KIBANA_LOGIN_USERNAME: "abelian"
-KIBANA_LOGIN_PASSWORD: ".Logimax."
+KIBANA_LOGIN_PASSWORD: "password"
 
+
+#other paths and settings
+SPOOL: "/var/spool/direct"      
+TEMP_SQL_PATH: "/home/sql-direct-tmp"
+POSTFIX_PASSWORD: "{{lookup('password', 'credentials/postfixpass length=10')}}"
