@@ -85,7 +85,9 @@ def send_message(sender, recipient, message_id, message):
 
     logging.debug('Certificate discovery algorithm: %s', algo)
     if (dom != None) and (dom[3] == 5): #cert_disco_algo = local (cert saved to database)
-        to_cert = certvld.validate(dom[2], sender_domain, recipient, domain, addressBound = False)
+        to_cert = None
+        if certvld.validate(dom[2], sender_domain, recipient, domain, addressBound = False):
+            to_cert = dom[2]
     else:
         to_cert = find_certificate(recipient, sender_domain, algo)
 
