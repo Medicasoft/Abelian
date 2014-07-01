@@ -1,5 +1,5 @@
 {
-  "title": "Logstash Search",
+  "title": "Logging overview",
   "services": {
     "query": {
       "list": {
@@ -38,7 +38,7 @@
   "rows": [
     {
       "title": "Graph",
-      "height": "350px",
+      "height": "250px",
       "editable": true,
       "collapse": false,
       "collapsable": true,
@@ -55,7 +55,7 @@
           "value_field": null,
           "auto_int": true,
           "resolution": 100,
-          "interval": "10m",
+          "interval": "12h",
           "fill": 3,
           "linewidth": 3,
           "timezone": "browser",
@@ -123,6 +123,412 @@
       "notice": false
     },
     {
+      "title": "Anvil statistics",
+      "height": "150px",
+      "editable": true,
+      "collapse": false,
+      "collapsable": true,
+      "panels": [
+        {
+          "span": 6,
+          "editable": true,
+          "type": "histogram",
+          "loadingEditor": false,
+          "mode": "max",
+          "time_field": "@timestamp",
+          "value_field": "anvil_count",
+          "x-axis": true,
+          "y-axis": true,
+          "scale": 1,
+          "y_format": "none",
+          "grid": {
+            "max": null,
+            "min": 0
+          },
+          "queries": {
+            "mode": "all",
+            "ids": [
+              0
+            ]
+          },
+          "annotate": {
+            "enable": false,
+            "query": "*",
+            "size": 20,
+            "field": "_type",
+            "sort": [
+              "_score",
+              "desc"
+            ]
+          },
+          "auto_int": true,
+          "resolution": 100,
+          "interval": "12h",
+          "intervals": [
+            "auto",
+            "1s",
+            "1m",
+            "5m",
+            "10m",
+            "30m",
+            "1h",
+            "3h",
+            "12h",
+            "1d",
+            "1w",
+            "1y"
+          ],
+          "lines": false,
+          "fill": 0,
+          "linewidth": 3,
+          "points": false,
+          "pointradius": 5,
+          "bars": true,
+          "stack": true,
+          "spyable": true,
+          "zoomlinks": true,
+          "options": true,
+          "legend": true,
+          "show_query": true,
+          "interactive": true,
+          "legend_counts": true,
+          "timezone": "browser",
+          "percentage": false,
+          "zerofill": true,
+          "derivative": false,
+          "tooltip": {
+            "value_type": "cumulative",
+            "query_as_alias": true
+          },
+          "title": "Max connection count"
+        },
+        {
+          "span": 6,
+          "editable": true,
+          "type": "histogram",
+          "loadingEditor": false,
+          "mode": "max",
+          "time_field": "@timestamp",
+          "value_field": "anvil_rate_numerator",
+          "x-axis": true,
+          "y-axis": true,
+          "scale": 1,
+          "y_format": "none",
+          "grid": {
+            "max": null,
+            "min": 0
+          },
+          "queries": {
+            "mode": "all",
+            "ids": [
+              0
+            ]
+          },
+          "annotate": {
+            "enable": false,
+            "query": "*",
+            "size": 20,
+            "field": "_type",
+            "sort": [
+              "_score",
+              "desc"
+            ]
+          },
+          "auto_int": true,
+          "resolution": 100,
+          "interval": "12h",
+          "intervals": [
+            "auto",
+            "1s",
+            "1m",
+            "5m",
+            "10m",
+            "30m",
+            "1h",
+            "3h",
+            "12h",
+            "1d",
+            "1w",
+            "1y"
+          ],
+          "lines": false,
+          "fill": 0,
+          "linewidth": 3,
+          "points": false,
+          "pointradius": 5,
+          "bars": true,
+          "stack": true,
+          "spyable": true,
+          "zoomlinks": true,
+          "options": true,
+          "legend": true,
+          "show_query": true,
+          "interactive": true,
+          "legend_counts": true,
+          "timezone": "browser",
+          "percentage": false,
+          "zerofill": true,
+          "derivative": false,
+          "tooltip": {
+            "value_type": "cumulative",
+            "query_as_alias": true
+          },
+          "title": "Max connection rate (per 60s)",
+          "scaleSeconds": false
+        }
+      ],
+      "notice": false
+    },
+    {
+      "title": "Anvil statistics 2",
+      "height": "150px",
+      "editable": true,
+      "collapse": false,
+      "collapsable": true,
+      "panels": [
+        {
+          "error": false,
+          "span": 6,
+          "editable": true,
+          "type": "terms",
+          "loadingEditor": false,
+          "field": "remotehost",
+          "exclude": [],
+          "missing": false,
+          "other": false,
+          "size": 10,
+          "order": "count",
+          "style": {
+            "font-size": "10pt"
+          },
+          "donut": false,
+          "tilt": false,
+          "labels": true,
+          "arrangement": "horizontal",
+          "chart": "bar",
+          "counter_pos": "above",
+          "spyable": true,
+          "queries": {
+            "mode": "all",
+            "ids": [
+              0
+            ]
+          },
+          "tmode": "terms_stats",
+          "tstat": "max",
+          "valuefield": "anvil_rate_numerator",
+          "title": "TOP 10 TERMS IN FIELD 'remotehost', ORDER BY MAX(anvil_rate_numerator)"
+        },
+        {
+          "error": false,
+          "span": 6,
+          "editable": true,
+          "type": "terms",
+          "loadingEditor": false,
+          "field": "remotehost",
+          "exclude": [],
+          "missing": false,
+          "other": false,
+          "size": 10,
+          "order": "reverse_max",
+          "style": {
+            "font-size": "10pt"
+          },
+          "donut": false,
+          "tilt": false,
+          "labels": true,
+          "arrangement": "horizontal",
+          "chart": "bar",
+          "counter_pos": "above",
+          "spyable": true,
+          "queries": {
+            "mode": "all",
+            "ids": [
+              0
+            ]
+          },
+          "tmode": "terms_stats",
+          "tstat": "max",
+          "valuefield": "anvil_count",
+          "title": "TOP 10 TERMS IN FIELD 'remotehost', ORDER BY MAX(anvil_count)"
+        }
+      ],
+      "notice": false
+    },
+    {
+      "title": "Sample statistics",
+      "height": "150px",
+      "editable": true,
+      "collapse": true,
+      "collapsable": true,
+      "panels": [
+        {
+          "height": "200px",
+          "field": "size",
+          "mode": "mean",
+          "span": 6,
+          "type": "stats",
+          "title": "Statistics for size",
+          "queries": {
+            "mode": "all",
+            "ids": [
+              0
+            ]
+          },
+          "style": {
+            "font-size": "24pt"
+          },
+          "format": "number",
+          "display_breakdown": "yes",
+          "sort_field": "count",
+          "sort_reverse": false,
+          "label_name": "Query",
+          "value_name": "Value",
+          "spyable": true,
+          "show": {
+            "count": true,
+            "min": true,
+            "max": true,
+            "mean": true,
+            "std_deviation": false,
+            "sum_of_squares": false,
+            "total": true,
+            "variance": false
+          },
+          "unit": "bytes"
+        },
+        {
+          "height": "200px",
+          "field": "delay",
+          "mode": "mean",
+          "span": 6,
+          "type": "stats",
+          "title": "Statistics for delay (ms)",
+          "queries": {
+            "mode": "all",
+            "ids": [
+              0
+            ]
+          },
+          "style": {
+            "font-size": "24pt"
+          },
+          "format": "number",
+          "display_breakdown": "yes",
+          "sort_field": "",
+          "sort_reverse": false,
+          "label_name": "Query",
+          "value_name": "Value",
+          "spyable": true,
+          "show": {
+            "count": true,
+            "min": true,
+            "max": true,
+            "mean": true,
+            "std_deviation": false,
+            "sum_of_squares": false,
+            "total": true,
+            "variance": false
+          },
+          "unit": "ms"
+        },
+        {
+          "height": "200px",
+          "chart": "pie",
+          "field": "from",
+          "span": 6,
+          "type": "terms",
+          "title": "Top 10 terms in field from",
+          "exclude": [],
+          "missing": false,
+          "other": false,
+          "size": 10,
+          "order": "count",
+          "style": {
+            "font-size": "10pt"
+          },
+          "donut": true,
+          "tilt": true,
+          "labels": true,
+          "arrangement": "horizontal",
+          "counter_pos": "above",
+          "spyable": true,
+          "queries": {
+            "mode": "all",
+            "ids": [
+              0
+            ]
+          },
+          "tmode": "terms",
+          "tstat": "total",
+          "valuefield": ""
+        },
+        {
+          "height": "200px",
+          "chart": "pie",
+          "field": "to",
+          "span": 6,
+          "type": "terms",
+          "title": "Top 10 terms in field to",
+          "exclude": [],
+          "missing": false,
+          "other": false,
+          "size": 10,
+          "order": "count",
+          "style": {
+            "font-size": "10pt"
+          },
+          "donut": true,
+          "tilt": true,
+          "labels": true,
+          "arrangement": "horizontal",
+          "counter_pos": "above",
+          "spyable": true,
+          "queries": {
+            "mode": "all",
+            "ids": [
+              0
+            ]
+          },
+          "tmode": "terms",
+          "tstat": "total",
+          "valuefield": ""
+        },
+        {
+          "height": "200px",
+          "chart": "pie",
+          "field": "component",
+          "span": 12,
+          "type": "terms",
+          "title": "Top 10 terms in field component",
+          "exclude": [],
+          "missing": true,
+          "other": true,
+          "size": 10,
+          "order": "count",
+          "style": {
+            "font-size": "10pt"
+          },
+          "donut": false,
+          "tilt": false,
+          "labels": true,
+          "arrangement": "horizontal",
+          "counter_pos": "above",
+          "spyable": true,
+          "queries": {
+            "mode": "all",
+            "ids": [
+              0
+            ]
+          },
+          "tmode": "terms",
+          "tstat": "total",
+          "valuefield": ""
+        }
+      ],
+      "notice": false
+    },
+    {
       "title": "Events",
       "height": "350px",
       "editable": true,
@@ -167,7 +573,7 @@
           "status": "Stable",
           "trimFactor": 300,
           "normTimes": true,
-          "all_fields": false
+          "all_fields": true
         }
       ],
       "notice": false
@@ -191,7 +597,16 @@
       "query": "*",
       "pinned": true,
       "history": [
-        "*"
+        "*",
+        "_exists_:size",
+        "",
+        "from:alex",
+        "from:maria",
+        "component:anvil",
+        "component:qmgr",
+        "qtype:removed",
+        "qtype:from",
+        "_exists_:qtype"
       ],
       "remember": 10,
       "enable": true
@@ -199,7 +614,7 @@
     {
       "type": "filtering",
       "collapse": true,
-      "notice": true,
+      "notice": false,
       "enable": true
     }
   ],
