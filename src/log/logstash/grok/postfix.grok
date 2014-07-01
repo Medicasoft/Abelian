@@ -75,10 +75,16 @@ POSTFIXCLEANUPMESSAGE (resent-)?message-id=<%{GREEDYDATA:messageid}>
 POSTFIXBOUNCE sender non-delivery notification: %{QUEUEID:bouncequeueid}
 
 # postfix/qmgr and postfix/pickup
-POSTFIXQMGR (?:removed|(from=<(?:%{EMAILADDRESS:from})?>(?:, size=%{POSINT:size}, nrcpt=%{POSINT:nrcpt} \(%{GREEDYDATA:queuestatus}\))?))
+POSTFIXQMGR (?<qtype>removed|from)(?:=<(?:%{EMAILADDRESS:from})?>(?:, size=%{POSINT:size}, nrcpt=%{POSINT:nrcpt} \(%{GREEDYDATA:queuestatus}\))?)?
 
 # postfix/anvil
-POSTFIXANVIL statistics: %{DATA:anvilstatistic}(:? for \(%{DATA:remotehost}\))?(:? at %{GREEDYDATA:timestampanvil})
+POSTFIXANVIL statistics: %{ANVILSTAT:anvil_statistics}(:? for \(%{DATA:remotehost}\))?(:? at %{GREEDYDATA:timestampanvil})
+ANVILSTAT %{ANVILRATE}|%{ANVILCOUNT}|%{ANVILSIZE}
+ANVILRATE (?:max connection rate %{NATINT:anvil_rate_numerator}/%{NATINT:anvil_rate_denominator}s)?
+ANVILCOUNT (?:max connection count %{NATINT:anvil_count})?
+ANVILSIZE (?:max cache size %{NATINT:anvil_size})?
+NATINT [1-9][0-9]*
+
 
 # AMAVISD
 USER_AGENT User-Agent|X-Mailer

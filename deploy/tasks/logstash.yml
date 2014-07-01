@@ -26,10 +26,6 @@
 - name: Create Logstash log directory
   file: path=/var/log/logstash state=directory
   
-- name: Copy Logstash configuration file
-  template: src=templates/logstash_server.conf.j2 dest=/etc/logstash/server.conf
-  #notify: 
-  #  - Restart logstash
     
 - name: Copy Logstash configuration files
   copy: src=../src/log/logstash/grok/postfix.grok dest=/opt/logstash/patterns/postfix.grok
@@ -38,6 +34,10 @@
   #  - ../src/log/logstash/grok/*.grok        
   #notify: 
   #  - Restart logstash
-    
-#TODO # Logrotate job for logstash
+
+- name: Copy Logstash configuration file
+  template: src=templates/logstash_server.conf.j2 dest=/etc/logstash/server.conf
+  notify: 
+    - Restart logstash
+  #TODO # Logrotate job for logstash
 
