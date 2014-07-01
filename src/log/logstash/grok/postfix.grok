@@ -18,7 +18,7 @@ HELO (?:\[%{IP:helo}\]|%{HOST:helo}|%{DATA:helo})
 # postfix/pipe
 # POSTFIXPIPE to=<%{EMAILADDRESS:to}>, relay=%{RELAY}, delay=%{DELAY}, delays=%{DELAYS}, dsn=%{DSN}, status=%{STATUS} \(%{GREEDYDATA:reason}\)
 
-POSTFIXPIPE to=<%{EMAILADDRESS:to}>, relay=%{RELAY}, delay=%{DELAY:delay}, delays=%{DELAYS}, dsn=%{DSN}, status=%{STATUS} \(%{GREEDYDATA:reason}\)
+POSTFIXPIPE to=<%{EMAILADDRESS:to}>, relay=%{RELAY}, delay=%{DELAY:delay:float}, delays=%{DELAYS}, dsn=%{DSN}, status=%{STATUS} \(%{GREEDYDATA:reason}\)
 
 # Postfix stuff
 QUEUEID (?:[A-F0-9]+|NOQUEUE)
@@ -27,7 +27,7 @@ EMAILADDRESS %{EMAILADDRESSPART:local}@%{EMAILADDRESSPART:remote}
 RELAY (?:%{HOSTNAME:relayhost}(?:\[%{IP:relayip}\](?::[0-9]+(.[0-9]+)?)?)?)
 #RELAY (?:%{HOSTNAME:relayhost}(?:\[%{IP:relayip}\](?:%{POSREAL:relayport})))
 POSREAL [0-9]+(.[0-9]+)?
-DELAYS %{POSREAL:a}/%{POSREAL:b}/%{POSREAL:c}/%{POSREAL:d}
+DELAYS %{POSREAL:a:float}/%{POSREAL:b:float}/%{POSREAL:c:float}/%{POSREAL:d:float}
 DELAY (%{POSREAL}[/]*)+
 
 
@@ -75,14 +75,14 @@ POSTFIXCLEANUPMESSAGE (resent-)?message-id=<%{GREEDYDATA:messageid}>
 POSTFIXBOUNCE sender non-delivery notification: %{QUEUEID:bouncequeueid}
 
 # postfix/qmgr and postfix/pickup
-POSTFIXQMGR (?<qtype>removed|from)(?:=<(?:%{EMAILADDRESS:from})?>(?:, size=%{POSINT:size}, nrcpt=%{POSINT:nrcpt} \(%{GREEDYDATA:queuestatus}\))?)?
+POSTFIXQMGR (?<qtype>removed|from)(?:=<(?:%{EMAILADDRESS:from})?>(?:, size=%{POSINT:size:int}, nrcpt=%{POSINT:nrcpt:int} \(%{GREEDYDATA:queuestatus}\))?)?
 
 # postfix/anvil
 POSTFIXANVIL statistics: %{ANVILSTAT:anvil_statistics}(:? for \(%{DATA:remotehost}\))?(:? at %{GREEDYDATA:timestampanvil})
 ANVILSTAT %{ANVILRATE}|%{ANVILCOUNT}|%{ANVILSIZE}
-ANVILRATE (?:max connection rate %{NATINT:anvil_rate_numerator}/%{NATINT:anvil_rate_denominator}s)?
-ANVILCOUNT (?:max connection count %{NATINT:anvil_count})?
-ANVILSIZE (?:max cache size %{NATINT:anvil_size})?
+ANVILRATE (?:max connection rate %{NATINT:anvil_rate_numerator:int}/%{NATINT:anvil_rate_denominator:int}s)?
+ANVILCOUNT (?:max connection count %{NATINT:anvil_count:int})?
+ANVILSIZE (?:max cache size %{NATINT:anvil_size:int})?
 NATINT [1-9][0-9]*
 
 
