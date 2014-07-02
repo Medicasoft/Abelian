@@ -1,0 +1,23 @@
+---
+- hosts: all
+  vars_files:    
+    - vars/vars.yml
+  sudo: yes  
+
+  tasks:  
+    - include: tasks/prereqs.yml
+    - include: tasks/postgres.yml 
+    - include: tasks/certificates.yml 
+    - include: tasks/pdns.yml    
+    - include: tasks/pyscripts.yml
+    - include: tasks/postfix.yml            
+    - include: tasks/api_install.yml
+    - include: tasks/api_deploy.yml        
+    - include: tasks/elasticsearch.yml
+    # Temporary exclude these tasks before resolving issues with deployment on red hat
+    #- include: tasks/logstash.yml
+    #- include: tasks/kibana.yml
+    #- include: tasks/nginx.yml
+    
+  handlers: 
+    - include: handlers/handlers.yml

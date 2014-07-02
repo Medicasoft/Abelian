@@ -1,0 +1,13 @@
+﻿var port = {{API_PORT}};
+var baseUrl = "http://{{API_HOSTNAME}}:" + port;
+if(!/\/$/.test(baseUrl)) //add ending '/' if not exists
+    baseUrl += '/';
+
+module.exports = {
+    connString: "/var/run/postgresql maildb",
+    port: port,
+    baseUrl: baseUrl,
+
+	//paging for resource search 
+    pageSize: 10
+};

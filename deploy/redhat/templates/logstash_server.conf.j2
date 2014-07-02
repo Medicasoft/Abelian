@@ -1,0 +1,75 @@
+input {
+  file {
+    path => ["/var/log/mail.*"]
+    type => "postfix"
+    sincedb_path => "/root/.sincedb"
+  }
+}
+filter {
+  if [type] == "postfix" {
+    grok {
+      patterns_dir => ["/opt/logstash/patterns"]
+      match => [ "message", "%{POSTFIX}" ]
+      add_tag => [ "postfix", "grokked", "%{component}" ]
+    }
+    if "pipe" in [tags] {
+      grok {
+        patterns_dir => ["/opt/logstash/patterns"]
+        match => [ "message", "%{POSTFIXPIPE}" ]
+      }
+    }
+    if "qmgr" in [tags] {
+      grok {
+        patterns_dir => ["/opt/logstash/patterns"]
+        match => [ "message", "%{POSTFIXQMGR}" ]
+      }
+    }
+    if "anvil" in [tags] {
+      grok {
+        patterns_dir => ["/opt/logstash/patterns"]
+        match => [ "message", "%{POSTFIXANVIL}" ]
+      }
+    }
+    if "cleanup" in [tags] {
+      grok {
+        patterns_dir => ["/opt/logstash/patterns"]
+        match => [ "message", "%{POSTFIXCLEANUP}" ]
+      }
+    }
+    if "bounce" in [tags] {
+      grok {
+        patterns_dir => ["/opt/logstash/patterns"]
+        match => [ "message", "%{POSTFIXBOUNCE}" ]
+      }
+    }
+    if "smtpd" in [tags] {
+      grok {
+        patterns_dir => ["/opt/logstash/patterns"]
+        match => [ "message", "%{POSTFIXSMTPD}" ]
+      }
+    }
+    if "smtp" in [tags] {
+      grok {
+        patterns_dir => ["/opt/logstash/patterns"]
+        match => [ "message", "%{POSTFIXSMTP}" ]
+      }
+    }
+    date {
+      match => [ "timestamp", "MMM dd HH:mm:ss", "MMM  d HH:mm:ss" ]
+      add_tag => [ "dated" ]
+    }
+  }
+}
+output {
+  stdout { codec => json }
+	  elasticsearch {
+		type => "postfix"
+		cluster => "logstash_cluster"
+		embedded => false
+		host => "{{ELASTICSEARCH_HOST}}"
+        port => {{ELASTICSEARCH_PORT}}
+		node_name => "logstash_node"
+		protocol => "http"
+	  }
+}
+

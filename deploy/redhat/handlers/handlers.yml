@@ -1,0 +1,17 @@
+- name: Reload postfix
+  service: name=postfix state=reloaded enabled=yes
+
+- name: Restart pdns
+  service: name=pdns state=restarted
+  
+- name: Restart elasticsearch
+  service: name=elasticsearch state=restarted
+    
+- name: Restart logstash
+  service: name=logstash state=restarted
+
+- name: Restart nginx  
+  service: name=nginx state=restarted
+
+- name: Reload postgres
+  service: name=postgresql state=reloaded

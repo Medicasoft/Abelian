@@ -1,0 +1,36 @@
+- name: Install wget
+  yum: name=wget state=present 
+   
+- name: ElasticSearch | Download Java
+  command: chdir=/opt wget --no-check-certificate --no-cookies --header "Cookie:oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/7u60-b19/jdk-7u60-linux-x64.rpm 
+   
+- name: ElasticSearch | Install JDK
+  command: rpm -ivh /opt/jdk-7u60-linux-x64.rpm
+    
+- name: Create directory for elasticsearch
+  file: path=/opt/elasticsearch state=directory
+
+- name: Download elasticsearch 1.2.1 rpm
+  get_url: url=https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.noarch.rpm dest=/opt/elasticsearch/elasticsearch-1.2.1.rpm
+  
+- name: Install elasticsearch 1.2.1  
+  yum: name=/opt/elasticsearch/elasticsearch-1.2.1.rpm 
+  
+- name: Configure elasticsearch
+  lineinfile: line="{{item}}" dest=/etc/elasticsearch/elasticsearch.yml state=present
+  with_items:
+    - "cluster.name: logstash_cluster"
+    - "node.name: logstash_node"
+  notify:
+    - Restart elasticsearch
+    
+# - name: Start ES on boot
+  # command: sudo update-rc.d elasticsearch defaults 95 10
+  
+# - name: Install ES curator  
+  # pip: name=elasticsearch-curator state=present
+  
+#TODO # Create /etc/cron.daily/elasticsearch_curator Cron Job  
+#- name: Set execute permision on /etc/cron.daily/elasticsearch_curator
+#  file: path=/etc/cron.daily/elasticsearch_curator mode=770
+  

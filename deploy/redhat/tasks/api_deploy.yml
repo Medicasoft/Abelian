@@ -1,0 +1,13 @@
+- name: Deploy API files
+  copy: src=../../src/api/ dest={{SPOOL}}/api/ owner=direct
+
+- name: Copy API config file
+  template: src=templates/config.js.j2 dest={{SPOOL}}/api/config.js owner=direct
+  
+- name: Install the required Node.js packages
+  npm: path={{SPOOL}}/api
+  sudo_user: direct
+    
+- name: Start Node.js app with forever
+  command: forever start -a -l {{SPOOL}}/api/out.log {{SPOOL}}/api/service.js 
+  sudo_user: direct

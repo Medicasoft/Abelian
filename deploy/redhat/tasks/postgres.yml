@@ -1,0 +1,22 @@
+-  name: Install PostgreSql packages
+   yum: name={{item}} state=present
+   with_items:
+    - postgresql-server
+    - python-psycopg2
+
+-  name: Initialize new PostgreSql cluster
+   command: postgresql-setup initdb
+ 
+-  name: Configure pg_hba.conf
+   template:
+        src: templates/pg_hba.conf.j2
+        dest: "/var/lib/pgsql/data/pg_hba.conf"
+        owner: "{{ postgresql_admin_user }}"
+        group: "{{ postgresql_admin_user }}"
+        mode: 0640
+
+#-  name: Configure PostgreSql to start at boot
+#   command: chkconfig postgresql on
+    
+-  name: Check postgresql started and set it to be started at boot
+   service: name=postgresql state=started enabled=yes

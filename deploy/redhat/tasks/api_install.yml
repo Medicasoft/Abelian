@@ -1,0 +1,10 @@
+- name: Install node.js
+  yum: name={{item}} state=present
+  with_items:
+      - nodejs      
+
+- name: Install npm
+  shell: curl https://www.npmjs.org/install.sh | sh      
+      
+- name: Install node.js module forever as global
+  npm: name=forever global=yes  

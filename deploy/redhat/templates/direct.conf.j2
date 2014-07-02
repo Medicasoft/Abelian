@@ -1,0 +1,37 @@
+description "Upstart script for Direct Node.js server process"
+start on startup
+stop on shutdown
+
+# This line is needed so that Upstart reports the pid of the Node.js process
+# started by Forever rather than Forever's pid.
+expect fork
+
+# Environment variables:
+# The application startup Javascript file path.
+env APPLICATION_PATH="{{SPOOL}}/api/service.js"
+# Log file path.
+env LOG="out.log"
+# Forever settings to prevent the application spinning if it fails on launch.
+env MIN_UPTIME="5000"
+env SPIN_SLEEP_TIME="2000"
+ 
+
+
+script
+    # The minUptime and spinSleepTime settings stop Forever from thrashing if
+    # the application fails immediately on launch. This is generally necessary
+    # to avoid loading development servers to the point of failure every time
+    # someone makes an error in application initialization code, or bringing
+    # down production servers the same way if a database or other critical
+    # service suddenly becomes inaccessible.
+    exec sudo -u direct forever \
+      -a \
+      -l $LOG \
+      --minUptime $MIN_UPTIME \
+      --spinSleepTime $SPIN_SLEEP_TIME \
+      start $APPLICATION_PATH
+end script
+ 
+pre-stop script
+    exec sudo -u direct forever stop $APPLICATION_PATH
+end script

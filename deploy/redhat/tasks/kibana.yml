@@ -1,0 +1,26 @@
+- name: Download Kibana
+  get_url: url=https://download.elasticsearch.org/kibana/kibana/kibana-3.1.0.tar.gz dest=/opt/kibana-3.1.0.tar.gz
+  
+- name: Uncompress Kibana
+  shell: chdir=/opt {{item}} creates=/opt/kibana
+  with_items:
+    - "tar zxf /opt/kibana-3.1.0.tar.gz"        
+    - "mv kibana-3.1.0 kibana"
+    #- "rm kibana-*.tar.gz"
+  sudo: yes
+ 
+- name: Configure Kibana elastic search url
+  replace: 
+    dest=/opt/kibana/config.js
+    regexp='elasticsearch:\s"http://"\+window\.location\.hostname\+":9200",'    
+    replace='elasticsearch{{':'}} "{{ELASTICSEARCH_HTTP_URL}}",'
+    
+- name: Configure Kibana dashboards json
+  replace: 
+    dest=/opt/kibana/config.js
+    regexp='default\.json'    
+    replace='LogDashb.json'
+      
+- name: Copy Kibana dashboard
+  copy: src=../../src/log/kibana/LogDashb.json dest=/opt/kibana/app/dashboards/
+

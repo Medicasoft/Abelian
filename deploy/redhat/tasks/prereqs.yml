@@ -1,0 +1,50 @@
+# - name: Update repositories cache 
+  # apt: update_cache=yes      
+- name: Add Extra Packages for Enterprise Linux repository 
+  yum: name="http://dl.fedoraproject.org/pub/epel/beta/7/x86_64/epel-release-7-0.2.noarch.rpm" state=present
+
+- name: Install unzip
+  yum: name=unzip state=present
+ 
+- name: Create Direct group
+  group: name=direct state=present
+
+- name: Create Direct user
+  user: name=direct home={{SPOOL}} group=direct    
+
+- name: Create Direct file structure
+  file: path={{item}} state=directory group=direct owner=direct mode=770
+  with_items:
+    - "{{SPOOL}}"
+    - "{{SPOOL}}/ca"
+    - "{{SPOOL}}/ca/key"
+    - "{{SPOOL}}/ca/key/{{MAIL_DOMAIN}}"
+    - "{{SPOOL}}/ca/cert"
+    - "{{SPOOL}}/ca/cert/{{MAIL_DOMAIN}}"
+    - "{{SPOOL}}/ca/trust"
+    - "{{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}"
+    - "{{SPOOL}}/crl"
+    - "{{SPOOL}}/api"
+    - "{{SPOOL}}/tmp"
+    - "{{SPOOL}}/tools"
+    - /home/root/
+    - /home/root/direct 
+    - /var/run/forever    
+
+- name: Copy scripts in {{SPOOL}}/tools folder
+  copy: src=../../src/tools/ dest={{SPOOL}}/tools/
+
+- name: Set execute permissions
+  file: path={{SPOOL}}/tools/ recurse=yes owner=direct mode=744 state=directory
+
+- name: Create .bash_profile file
+  file: path=~direct/.bash_profile state=touch
+
+- name: Add {{SPOOL}}/tools folder to PATH for direct user
+  lineinfile: dest=~direct/.bash_profile line='{{item}}' state=present 
+  with_items:
+    - "PATH=$PATH:{{SPOOL}}/tools"
+    - "export PATH"
+
+- name: Install python-pip
+  yum: name=python-pip state=present  

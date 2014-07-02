@@ -1,0 +1,113 @@
+   - name: PowerDNS | Install PowerDNS from EPEL
+     yum: name={{item}} state=present
+     with_items:
+        - pdns
+        - pdns-backend-postgresql.x86_64
+   
+   - name: PowerDNS | Configuration - set resolv.conf to use local server for resolve
+     lineinfile: dest=/etc/resolv.conf line="nameserver 127.0.0.1" state=present
+   
+   - name: Ensure /etc/conf.d exists
+     file: path=/etc/conf.d state=directory
+     
+   - name: Ensure /etc/conf.d/net exists
+     file: path=/etc/conf.d/net state=touch
+   
+   - name: PowerDNS | Configuration - set conf.d/net such as dhcp client won't replace resolv.conf 
+     lineinfile: dest=/etc/conf.d/net line='dhcpcd_eth0="-R"' state=present
+     
+   - name: PowerDNS | Create the pdns database
+     postgresql_db: name=pdns state=present owner=postgres
+     sudo_user: "{{postgresql_admin_user}}"
+  
+   - name: PowerDNS | Create the pdns tables
+     command: psql -d pdns -f /usr/share/doc/pdns-backend-postgresql-3.3.1/{{item}}
+     with_items:
+        - no-dnssec.schema.pgsql.sql
+        - dnssec.schema.pgsql.sql
+     sudo_user: "{{postgresql_admin_user}}"
+
+   - name: PowerDNS | Create the user 'pdns'
+     postgresql_user: name=pdns state=present password={{pdns_password}} role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE
+     sudo_user: "{{postgresql_admin_user}}"
+ 
+   - name: PowerDNS | Create the user 'pdns'
+     postgresql_user: name=pdns state=present password={{pdns_password}} role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE
+     sudo_user: "{{postgresql_admin_user}}"
+ 
+   - name: PowerDNS | Set privs for user 'pdns'
+     postgresql_privs: >
+        db=pdns
+        privs=ALL
+        type=table
+        objs=domains,records
+        role=pdns
+
+   - name: PowerDNS | Set privs for user 'pdns' (2)
+     postgresql_privs: >
+        db=pdns
+        privs=ALL
+        type=sequence
+        objs=domains_id_seq,records_id_seq
+        role=pdns
+  
+   - name: PowerDNS | Set privs for user 'pdns' (3)
+     postgresql_privs: >
+        db=pdns
+        privs=SELECT
+        type=table
+        obj=supermasters
+        role=pdns
+
+   - name: PowerDNS | Configure pdns.conf
+     lineinfile: dest=/etc/pdns/pdns.conf line="{{item}}" state=present      
+     with_items:
+        - "setuid=pdns"
+        - "setgid=pdns"
+        - "launch=gpgsql"
+        - "gpgsql-host=localhost"
+        - "gpgsql-dbname=pdns"
+        - "gpgsql-user=pdns"
+        - "gpgsql-password={{pdns_password}}"
+        - "gpgsql-dnssec=no"
+
+        - "allow-recursion=127.0.0.1"
+        - "disable-axfr=yes"
+        - "guardian=yes"
+
+   # - name: Remove pdns.simplebind config file
+     # file: name=/etc/powerdns/pdns.d/pdns.simplebind.conf state=absent
+     # notify:
+       # - Restart pdns
+
+   - name: Save certificate info (for configuring PowerDNS) as <PKIX tagkey RSASHA1 content> – where tagkey is the decimal value of the last two bytes of the modulus (and skip –--BEGIN CERTIFICATE-----)
+     shell: openssl x509 -in "{{SPOOL}}/ca/cert/{{MAIL_DOMAIN}}/direct.pem" -modulus | awk '
+          BEGIN {ORS=" ";OFS=" ";PKIX=1;RSASHA1=5}
+          {
+            if(NR==1) printf("%d %d %d ",PKIX,strtonum("0x" substr($0,length($0)-3)),RSASHA1);               
+            if(NR>3) print l;
+            l=$0;
+         }'
+     register: CERT
+     sudo: yes  
+     
+   - name: PowerDNS | Create temp sql script directory
+     file: name={{TEMP_SQL_PATH}} state=directory mode=770 owner=postgres group=postgres
+
+      
+   - name: PowerDNS | Prepare pdns database script
+     template: src=templates/pdns_db.j2 dest={{TEMP_SQL_PATH}}/pdns_db.sql      
+
+   - name: PowerDNS | Fill pdns database
+     command: psql -d pdns -f {{TEMP_SQL_PATH}}/pdns_db.sql    
+     sudo_user: "{{postgresql_admin_user}}"
+     notify:
+       - Restart pdns
+
+   - name: PowerDNS | Remove temp script file
+     file: name={{TEMP_SQL_PATH}}/pdns_db.sql state=absent
+
+
+   #- name: Configure pdnssec
+   #  command: pdnssec rectify-zone {{DOMAIN}}
+
