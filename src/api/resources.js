@@ -193,7 +193,7 @@ function getEntities(req, res, next, type) {
                         return;
                     }
 
-                    var searchUrl = baseUrl + "/" + meta.urlSearchFragment;
+                    var searchUrl = baseUrl + meta.urlSearchFragment;
                     var currentPage = page ? page : 1;
                     var nextPage = totalResults > offset + limit ? currentPage + 1 : undefined;
                     var prevPage = offset > 0 ? currentPage - 1 : undefined;
