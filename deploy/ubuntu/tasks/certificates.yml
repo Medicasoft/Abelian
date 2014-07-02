@@ -26,7 +26,7 @@
      file: path={{SPOOL}}/tools/req_ext.conf state=absent
   
   -  name: Fetch the generated trust anchor for local domain
-     fetch: src={{SPOOL}}/ca/cert/{{MAIL_DOMAIN}}/direct.pem dest=certificates
+     fetch: src={{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}/root.pem dest=certificates
 
   -  name: Save certificate info (for configuring PowerDNS) as <PKIX tagkey RSASHA1 content> – where tagkey is the decimal value of the last two bytes of the modulus (and skip –--BEGIN CERTIFICATE-----)
      shell: openssl x509 -in "{{SPOOL}}/ca/cert/{{MAIL_DOMAIN}}/direct.pem" -modulus | awk '
