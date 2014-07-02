@@ -1,5 +1,5 @@
 - name: Deploy API files
-  copy: src=../src/api/ dest={{SPOOL}}/api/
+  copy: src=../../src/api/ dest={{SPOOL}}/api/
 
 - name: Copy API config file
   template: src=templates/config.js.j2 dest={{SPOOL}}/api/config.js

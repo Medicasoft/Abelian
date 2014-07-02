@@ -28,10 +28,10 @@
   
     
 - name: Copy Logstash configuration files
-  copy: src=../src/log/logstash/grok/postfix.grok dest=/opt/logstash/patterns/postfix.grok
+  copy: src=../../src/log/logstash/grok/postfix.grok dest=/opt/logstash/patterns/postfix.grok
   #copy: src={{item}} dest=/opt/logstash/patterns/
   #with_fileglob:
-  #  - ../src/log/logstash/grok/*.grok        
+  #  - ../../src/log/logstash/grok/*.grok        
   #notify: 
   #  - Restart logstash
 

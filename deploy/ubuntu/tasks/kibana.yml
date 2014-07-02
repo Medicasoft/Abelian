@@ -22,5 +22,5 @@
     replace='LogDashb.json'
       
 - name: Copy Kibana dashboard
-  copy: src=../src/log/kibana/LogDashb.json dest=/opt/kibana/app/dashboards/
+  copy: src=../../src/log/kibana/LogDashb.json dest=/opt/kibana/app/dashboards/
 

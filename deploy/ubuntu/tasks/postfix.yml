@@ -46,7 +46,7 @@
         - dnspython
         
    - name: Copy server files to remote node    
-     copy: src=../src/smime/{{item}} dest=/var/spool/direct/{{item}}
+     copy: src=../../src/smime/{{item}} dest=/var/spool/direct/{{item}}
      with_items: 
         - certdisco.py
         - certvld.py
