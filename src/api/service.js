@@ -107,6 +107,10 @@ function getMessages(req, res, next) {
 //}
 
 function sendMessage(req, res, next) {
+    if(req.body === undefined) {
+        res.send(400, 'Invalid content-type');
+        return next();
+    };
 	async.waterfall([
 		function(callback) {
 			callback(null, req);
