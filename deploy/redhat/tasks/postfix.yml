@@ -25,8 +25,6 @@
        - openldap
        - openldap-devel
         
-   - name: Postfix | Install the Development tools package group
-     yum: name="@Development tools" state=present
      
    - name: Postfix | Copy header db.h
      command: cp /usr/include/libdb4/db.h /usr/include
