@@ -1,5 +1,8 @@
 - name: Reload postfix
-  service: name=postfix state=reloaded enabled=yes
+  service: name=postfix state=reloaded 
+  
+- name: Restart postfix
+  service: name=postfix state=restarted
 
 - name: Restart pdns
   service: name=pdns state=restarted

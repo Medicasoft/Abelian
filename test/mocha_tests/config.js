@@ -23,5 +23,9 @@ module.exports = {
     unitTestBaseUrl: "http://abelian.medicasoft.us:8085/",
 
     //common
-    enable_log : false
+    enable_log : false,
+    //test case parameters (delay measured in miliseconds)
+    RETRY_EMAIL_DELAY : 2000,
+    INITIAL_RECEIVE_EMAIL_DELAY : 5000,
+    MAX_RECEIVE_EMAIL_TRIES : 5
 }

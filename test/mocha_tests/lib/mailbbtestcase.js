@@ -18,6 +18,7 @@ var events = require("events");
 var mailparser = require("mailparser");
 var async = require("async");
 var utils = require("./utils");
+var config = require("../config");
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Dunno this is needed.  Otherwise send email does not work.
 	
@@ -36,9 +37,9 @@ Status.INCOMPLETE = 'incomplete';
 Status.COMPLETED = 'complete';
 Status.NO_RESPONSE = 'no_response';
 
-var RETRY_EMAIL_DELAY = 1000;
-var INITIAL_RECEIVE_EMAIL_DELAY = 2000;
-var MAX_RECEIVE_EMAIL_TRIES =  3; //30
+var RETRY_EMAIL_DELAY = config.RETRY_EMAIL_DELAY;
+var INITIAL_RECEIVE_EMAIL_DELAY = config.INITIAL_RECEIVE_EMAIL_DELAY;
+var MAX_RECEIVE_EMAIL_TRIES = config.MAX_RECEIVE_EMAIL_TRIES; 
 var RESPECT_MDN = true;
 
 var TestResult = function(sendingIP, receivingIP, subject, messageId) {

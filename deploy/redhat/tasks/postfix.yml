@@ -40,7 +40,7 @@
    
    - name: Postfix | Configure Postfix
      lineinfile: dest=/etc/postfix/main.cf regexp='^\s*inet_interfaces\s*=.*' line="inet_interfaces=all"
-     notify: Reload postfix
+     notify: Restart postfix
   
    - name: Create the postfix user 'direct'
      postgresql_user: name=direct state=present encrypted=yes role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE
