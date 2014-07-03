@@ -1,10 +1,10 @@
-DOMAIN: "abelian.example.com"
-MAIL_DOMAIN: "direct.abelian.example.com"
+DOMAIN: "rh2.medicasoft.us"
+MAIL_DOMAIN: "direct.rh2.medicasoft.us"
 #External IP for DOMAIN
-EXTERNAL_IP: "10.0.0.1"
+EXTERNAL_IP: "54.198.21.249"
 
 #Node.js API - host and port used to build resource urls in service responses
-API_HOSTNAME: "abelian.example.com"
+API_HOSTNAME: "rh2.medicasoft.us"
 API_PORT: 8085
 
 #Configure Elastic Search host and port used by Nginx and Logstash; 
@@ -15,7 +15,7 @@ ELASTICSEARCH_PORT: "9200"
 
 #Configure Elastic Search url used by Kibana
 #it should be the External URL to ElasticSearch (and then the port 80 is FIXED by nginx configuration) e.g. http://external_host:80 
-ELASTICSEARCH_HTTP_URL: "http://abelian.example.com:80"
+ELASTICSEARCH_HTTP_URL: "http://rh2.medicasoft.us:80"
 
 #kibana
 KIBANA_LOGIN_USERNAME: "abelian"
@@ -45,4 +45,4 @@ postgresql_pg_hba_default:
 
 #pdns
 pdns_password : "password"
-pdns_fill_database : false
+pdns_fill_database : true
