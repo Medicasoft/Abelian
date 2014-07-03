@@ -36,6 +36,9 @@
         - smimercv.py
         - smimesend.py
         
+   - name: Set path to c_rehash
+     command: sed -i -e 's|c_rehash|/var/spool/direct/tools/bin/c_rehash|' /var/spool/direct/tools/anchorlib.py
+        
    - name: Set file attributes
      file: path=/var/spool/direct/{{item}} group=direct owner=direct mode=775
      with_items: 
