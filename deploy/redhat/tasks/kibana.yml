@@ -9,18 +9,9 @@
     #- "rm kibana-*.tar.gz"
   sudo: yes
  
-- name: Configure Kibana elastic search url
-  replace: 
-    dest=/opt/kibana/config.js
-    regexp='elasticsearch:\s"http://"\+window\.location\.hostname\+":9200",'    
-    replace='elasticsearch{{':'}} "{{ELASTICSEARCH_HTTP_URL}}",'
-    
-- name: Configure Kibana dashboards json
-  replace: 
-    dest=/opt/kibana/config.js
-    regexp='default\.json'    
-    replace='LogDashb.json'
+- name: Configure Kibana 
+  template: src=files/kibana_config.js dest=/opt/kibana/config.js mode=774
       
 - name: Copy Kibana dashboard
-  copy: src=../../src/log/kibana/LogDashb.json dest=/opt/kibana/app/dashboards/
+  copy: src=../../src/log/kibana/LogDashb.json dest=/opt/kibana/app/dashboards/ mode=774
 

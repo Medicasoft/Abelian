@@ -5,11 +5,6 @@
 - name: Install logstash
   yum: name=/opt/logstash-1.4.1.rpm
      
-# - name: Copy Logstash Init Script
-  # copy: src=files/logstash dest=/etc/rc.d/init.d/logstash mode=770
-  # notify: 
-    # - Restart logstash
-
 - name: Add Logstash service to boot
   command: chkconfig --add logstash
 

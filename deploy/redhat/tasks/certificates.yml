@@ -5,7 +5,8 @@
      command: openssl req -new -x509 -days 365 -subj "/CN={{MAIL_DOMAIN}}_ca" -key "/home/root/direct/root.key" -out "{{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}/root.pem"
 
   -  name: Rehash trust store for local domain
-     command: c_rehash {{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}/     
+     command: "{{SPOOL}}/tools/bin/c_rehash {{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}/"
+     
 
   -  name: Generate server certificate for local domain - direct.key
      command: openssl genrsa -out "{{SPOOL}}/ca/key/{{MAIL_DOMAIN}}/direct.key" 2048

@@ -9,10 +9,10 @@
   sudo_user: direct
   
 - name: Copy init.d script for Direct
-  copy: src=files/direct dest=/etc/init.d/direct mode=0770
+  copy: src=files/direct dest=/etc/init.d/direct mode=0771 owner=root
 
 - name: Enable Direct service 
   command: chkconfig direct on
 
 - name: Start Direct service  
-  service: name=direct state=started
+  service: name=direct state=restarted

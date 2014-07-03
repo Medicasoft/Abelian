@@ -39,7 +39,7 @@
      command: chdir=/usr/local/src/postfix-2.11.1 make upgrade
    
    - name: Postfix | Configure Postfix
-     lineinfile: dest=/etc/postfix/main.cf line="inet_interfaces=all"
+     lineinfile: dest=/etc/postfix/main.cf regexp='^\s*inet_interfaces\s*=.*' line="inet_interfaces=all"
      notify: Reload postfix
   
    - name: Create the postfix user 'direct'

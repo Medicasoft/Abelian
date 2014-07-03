@@ -23,7 +23,7 @@
   notify: Restart nginx
   
 - name: Nginx | Copy init script
-  copy: src=files/init.d_nginx dest=/etc/init.d/nginx mode=0770 
+  copy: src=files/init.d_nginx dest=/etc/init.d/nginx mode=0775 owner=root
   notify: Restart nginx
 
 - name: Create log folder

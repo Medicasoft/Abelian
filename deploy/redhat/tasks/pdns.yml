@@ -79,8 +79,11 @@
      # file: name=/etc/powerdns/pdns.d/pdns.simplebind.conf state=absent
      # notify:
        # - Restart pdns
-
-   - name: Save certificate info (for configuring PowerDNS) as <PKIX tagkey RSASHA1 content> – where tagkey is the decimal value of the last two bytes of the modulus (and skip –--BEGIN CERTIFICATE-----)
+    
+   - name: PowerDNS | Create temp sql script directory
+     file: name={{TEMP_SQL_PATH}} state=directory mode=770 owner=postgres group=postgres
+ 
+   - name: Save certificate info
      shell: openssl x509 -in "{{SPOOL}}/ca/cert/{{MAIL_DOMAIN}}/direct.pem" -modulus | awk '
           BEGIN {ORS=" ";OFS=" ";PKIX=1;RSASHA1=5}
           {
@@ -89,18 +92,15 @@
             l=$0;
          }'
      register: CERT
-     sudo: yes  
+     sudo: yes
      
-   - name: PowerDNS | Create temp sql script directory
-     file: name={{TEMP_SQL_PATH}} state=directory mode=770 owner=postgres group=postgres
-
-      
    - name: PowerDNS | Prepare pdns database script
-     template: src=templates/pdns_db.j2 dest={{TEMP_SQL_PATH}}/pdns_db.sql      
+     template: src=templates/pdns_db.j2 dest={{TEMP_SQL_PATH}}/pdns_db.sql  mode=774    
 
    - name: PowerDNS | Fill pdns database
      command: psql -d pdns -f {{TEMP_SQL_PATH}}/pdns_db.sql    
      sudo_user: "{{postgresql_admin_user}}"
+     when: pdns_fill_database
      notify:
        - Restart pdns
 
@@ -108,7 +108,7 @@
      file: name={{TEMP_SQL_PATH}}/pdns_db.sql state=absent
 
    - name: Copy Init Script
-     copy: src=files/init.d_pdns dest=/etc/init.d/pdns mode=771  
+     copy: src=files/init.d_pdns dest=/etc/init.d/pdns mode=775 owner=root
 
    - name: PowerDNS | Add service to boot
      command: chkconfig --add pdns
