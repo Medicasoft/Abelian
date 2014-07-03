@@ -8,14 +8,14 @@
 # Description:       Enable service provided by daemon.
 ### END INIT INFO
 
-. /lib/lsb/init-functions
+# Source function library.
+. /etc/init.d/functions
 
 name="logstash"
 logstash_bin="/opt/logstash/bin/logstash"
 logstash_conf="/etc/logstash/server.conf"
 logstash_log="/var/log/logstash/server.log"
 pid_file="/var/run/$name.pid"
-patterns_path="/opt/logstash/patterns"
 
 start () {
         command="${logstash_bin} -- agent -f ${logstash_conf} --log ${logstash_log}"

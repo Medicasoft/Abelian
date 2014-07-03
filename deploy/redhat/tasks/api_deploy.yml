@@ -7,7 +7,12 @@
 - name: Install the required Node.js packages
   npm: path={{SPOOL}}/api
   sudo_user: direct
-    
-- name: Start Node.js app with forever
-  command: forever start -a -l {{SPOOL}}/api/out.log {{SPOOL}}/api/service.js 
-  sudo_user: direct
+  
+- name: Copy init.d script for Direct
+  copy: src=files/direct dest=/etc/init.d/direct mode=0770
+
+- name: Enable Direct service 
+  command: chkconfig direct on
+
+- name: Start Direct service  
+  service: name=direct state=started

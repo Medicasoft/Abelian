@@ -107,6 +107,18 @@
    - name: PowerDNS | Remove temp script file
      file: name={{TEMP_SQL_PATH}}/pdns_db.sql state=absent
 
+   - name: Copy Init Script
+     copy: src=files/init.d_pdns dest=/etc/init.d/pdns mode=771  
+
+   - name: PowerDNS | Add service to boot
+     command: chkconfig --add pdns
+
+   - name: PowerDNS | Enable service on boot
+     command: chkconfig pdns on
+
+   - name: PowerDNS | Start service  
+     service: name=pdns state=started
+      
 
    #- name: Configure pdnssec
    #  command: pdnssec rectify-zone {{DOMAIN}}

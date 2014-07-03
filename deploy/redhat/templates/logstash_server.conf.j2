@@ -1,8 +1,8 @@
 input {
   file {
-    path => ["/var/log/mail.*"]
+    path => ["/var/log/mail*"]
     type => "postfix"
-    sincedb_path => "/root/.sincedb"
+    sincedb_path => "/opt/logstash/.sincedb"
   }
 }
 filter {

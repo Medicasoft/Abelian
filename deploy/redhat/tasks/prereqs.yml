@@ -5,7 +5,10 @@
 
 - name: Install unzip
   yum: name=unzip state=present
-
+  
+- name: Install wget
+  yum: name=wget state=present 
+   
 - name: Install the Development tools package group
   yum: name="@Development tools" state=present
      
@@ -46,8 +49,11 @@
 - name: Add {{SPOOL}}/tools folder to PATH for direct user
   lineinfile: dest=~direct/.bash_profile line='{{item}}' state=present 
   with_items:
-    - "PATH=$PATH:{{SPOOL}}/tools"
+    - "PATH=$PATH:{{SPOOL}}/tools:{{SPOOL}}/tools/bin"
     - "export PATH"
 
 - name: Install python-pip
   yum: name=python-pip state=present  
+  
+- name: Copy c_rehash
+  copy: src=files/c_rehash dest={{SPOOL}}/tools/bin/ mode=755

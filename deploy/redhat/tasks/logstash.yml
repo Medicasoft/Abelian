@@ -1,43 +1,45 @@
-# https://download.elasticsearch.org/logstash/logstash/packages/centos/logstash-1.4.1-1_bd507eb.noarch.rpm
-- name: Download Logstash
-  get_url: url=https://download.elasticsearch.org/logstash/logstash/logstash-1.4.1.tar.gz dest=/opt/logstash-1.4.1.tar.gz
-  
-- name: Uncompress Logstash
-  shell: chdir=/opt {{item}} creates=/opt/logstash
-  with_items:
-    - "tar zxf /opt/logstash-1.4.1.tar.gz"        
-    - "mv logstash-1.4.1 logstash"
-    #- "rm logstash-*.tar.gz"
-  sudo: yes
+# 
+- name: Download Logstash rpm
+  get_url: url=https://download.elasticsearch.org/logstash/logstash/packages/centos/logstash-1.4.1-1_bd507eb.noarch.rpm dest=/opt/logstash-1.4.1.rpm
+
+- name: Install logstash
+  yum: name=/opt/logstash-1.4.1.rpm
      
-- name: Copy Logstash Init Script
-  copy: src=files/logstash dest=/etc/init.d/logstash  
-  #notify: 
-  #  - Restart logstash
-    
-- name: Set Logstash Init Script permissions 
-  file: path=/etc/init.d/logstash mode=770
+# - name: Copy Logstash Init Script
+  # copy: src=files/logstash dest=/etc/rc.d/init.d/logstash mode=770
+  # notify: 
+    # - Restart logstash
 
-- name: Start Logstash on boot
-  command: update-rc.d logstash defaults 96 04
+- name: Add Logstash service to boot
+  command: chkconfig --add logstash
 
+- name: Enable logstash service 
+  command: chkconfig logstash on
+
+- name: Start logstash service  
+  service: name=logstash state=started
+  
+# - name: Start logstash service and enable on boot
+  # service: name=logstash state=started enabled=yes
+  
 - name: Create Logstash configuration directory
   file: path=/etc/logstash state=directory
   
 - name: Create Logstash log directory
   file: path=/var/log/logstash state=directory
-  
-    
+      
 - name: Copy Logstash configuration files
   copy: src=../../src/log/logstash/grok/postfix.grok dest=/opt/logstash/patterns/postfix.grok
-  #copy: src={{item}} dest=/opt/logstash/patterns/
-  #with_fileglob:
-  #  - ../../src/log/logstash/grok/*.grok        
-  #notify: 
-  #  - Restart logstash
+  notify: 
+    - Restart logstash
 
 - name: Copy Logstash configuration file
-  template: src=templates/logstash_server.conf.j2 dest=/etc/logstash/server.conf
+  template: src=templates/logstash_server.conf.j2 dest=/etc/logstash/conf.d/logstash.conf owner=logstash group=logstash
+  notify: 
+    - Restart logstash
+    
+- name: Set permissions on Logstash configuration file
+  file: path=/etc/logstash/conf.d/logstash.conf owner=logstash group=logstash mode=770
   notify: 
     - Restart logstash
   #TODO # Logrotate job for logstash

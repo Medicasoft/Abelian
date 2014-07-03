@@ -1,32 +1,39 @@
-# - name: Install nginx
-  # yum: name=nginx state=present
-
 - name: Nginx | Download tar
   get_url: url=http://nginx.org/download/nginx-1.6.0.tar.gz dest=/usr/local/src/
   
 - name: Nginx | Unarchive download
   command: chdir=/usr/local/src/ tar xzvf nginx-1.6.0.tar.gz
+
+- name: Create www-data group  
+  group: name=www-data state=present
+  
+- name: Create www-data user
+  user: name=www-data group=www-data  state=present
   
 - name: Nginx | Configure files before compile
-  command: chdir=/usr/local/src/nginx-1.6.0 ./configure --user=ec2-user --group=ec2-user --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --pid-path=/var/run/nginx.pid
+  command: chdir=/usr/local/src/nginx-1.6.0 ./configure --user=www-data --group=www-data --sbin-path=/usr/sbin/nginx --conf-path=/etc/nginx/nginx.conf --pid-path=/var/run/nginx.pid
 #--conf-path=/etc/nginx/nginx.conf  ??
 
 - name: Nginx | Make
   command: chdir=/usr/local/src/nginx-1.6.0 make
+  notify: Restart nginx
   
 - name: Nginx | Make install
   command: chdir=/usr/local/src/nginx-1.6.0 make install
+  notify: Restart nginx
   
 - name: Nginx | Copy init script
-  copy: src=files/init.d_nginx dest=/etc/init.d/nginx mode=0711 
+  copy: src=files/init.d_nginx dest=/etc/init.d/nginx mode=0770 
+  notify: Restart nginx
 
+- name: Create log folder
+  file: path=/var/log/nginx state=directory owner=www-data group=www-data
+  
 - name: Nginx | Start service and set to be run on boot
   service: name=nginx state=started enabled=yes
-#chkconfig nginx on ?!
-#
   
 - name: Configure nginx
-  template: src=templates/nginx_default.j2 dest=/etc/nginx/sites-available/default
+  template: src=templates/nginx.conf.j2 dest=/etc/nginx/nginx.conf
   notify: Restart nginx
 
 - name: Install htpasswd dependency passlib

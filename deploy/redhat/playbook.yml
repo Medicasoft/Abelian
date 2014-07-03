@@ -13,11 +13,10 @@
     - include: tasks/postfix.yml            
     - include: tasks/api_install.yml
     - include: tasks/api_deploy.yml        
-    - include: tasks/elasticsearch.yml
-    # Temporary exclude these tasks before resolving issues with deployment on red hat
-    #- include: tasks/logstash.yml
-    #- include: tasks/kibana.yml
-    #- include: tasks/nginx.yml
+    - include: tasks/elasticsearch.yml    
+    - include: tasks/logstash.yml
+    - include: tasks/kibana.yml
+    - include: tasks/nginx.yml
     
   handlers: 
     - include: handlers/handlers.yml

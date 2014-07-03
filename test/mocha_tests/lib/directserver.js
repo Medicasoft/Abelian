@@ -39,7 +39,7 @@ var requestCall = function(callback, url, method, successCode, urlDetail) {
                 else
                     callback(null, body);
             } else {
-                utils.logMessage("...failed with unexpected statusCode:" + code);
+                utils.logMessage("...failed with unexpected statusCode:" + code + ", body: "+body);
                 utils.logMessage(body);
                 callback(new Error("Failed: " + method + " " + url + " statusCode:" + code));
             }
