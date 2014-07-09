@@ -1,18 +1,28 @@
 #!/usr/bin/env python
 from M2Crypto import BIO, SMIME, X509
-import subprocess
+import subprocess, threading, logging
+
+def writer(proc, message):
+    proc.stdin.write(message)
+    proc.stdin.close()
 
 def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128_cbc'):
     try:
         smime = SMIME.SMIME()
         #smime.pkey = sender_key
         #smime.x509 = sender_cert
-    	
-        #logging.debug('Signing outgoing message: %s', message_id)
+    	signature = ''
+        logging.debug('Signing outgoing message')
         command = ('/usr/bin/env', 'openssl', 'cms', '-sign', '-signer', sender_cert , '-inkey', sender_key)
-        proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-        proc.stdin.write(message)
-        signature, stderr = proc.communicate()
+        proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=-1)
+        #proc.stdin.write(message)
+        #signature, stderr = proc.communicate()
+        thread = threading.Thread(target=writer, args=(proc, message,))
+        thread.start()
+        for line in proc.stdout:
+            signature += line
+        thread.join()
+        logging.debug('Message signed')
 
         #signature = smime.sign(BIO.MemoryBuffer(message), flags=SMIME.PKCS7_DETACHED)
         #init buffer
