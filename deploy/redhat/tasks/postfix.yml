@@ -75,8 +75,8 @@
      postgresql_user: name=postfix state=present password={{POSTFIX_PASSWORD}} db=maildb role_attr_flags=LOGIN
      sudo_user: "{{postgresql_admin_user}}"
    
-   - name: Grant select priviledges to user
-     postgresql_privs: database=maildb roles=postfix schema=public type=table objs=ALL_IN_SCHEMA grant_option=yes state=present priv=SELECT
+   - name: Grant privileges to user
+     postgresql_privs: database=maildb roles=postfix schema=public type=table objs=ALL_IN_SCHEMA grant_option=yes state=present priv=ALL
      sudo_user: "{{postgresql_admin_user}}"
   
    - name: Set authentication method for postfix

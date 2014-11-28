@@ -28,7 +28,8 @@
      yum: name=swig state=present
 
    - name: Install M2Crypto (dependencies for Python scripts)
-     pip: name=M2Crypto state=present
+#     pip: name=M2Crypto state=present
+     yum: name=m2crypto state=present
 
    - name: Install other libraries
      yum: name=libpqxx-devel

@@ -34,7 +34,7 @@
      sudo_user: "{{postgresql_admin_user}}"
   
    - name: PowerDNS | Create the pdns tables
-     command: psql -d pdns -f /usr/share/doc/pdns-backend-postgresql-3.4.0/{{item}}
+     shell: /bin/sh -c "psql -d pdns -f /usr/share/doc/pdns-backend-postgresql*/{{item}}"
      with_items:
         - schema.pgsql.sql
      sudo_user: "{{postgresql_admin_user}}"

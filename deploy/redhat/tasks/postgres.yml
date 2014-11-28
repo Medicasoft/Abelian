@@ -19,7 +19,7 @@
 
 -  name: Initialize new PostgreSql cluster
    command: postgresql-setup initdb
- 
+
 -  name: Configure pg_hba.conf
    template:
         src: templates/pg_hba.conf.j2
@@ -27,6 +27,12 @@
         owner: "{{ postgresql_admin_user }}"
         group: "{{ postgresql_admin_user }}"
         mode: 0640
+
+- name: Ensure PostgreSQL is listening on all addresses
+  lineinfile: dest=/var/lib/pgsql/data/postgresql.conf
+    regexp='^#?listen_addresses\s*='
+    line="listen_addresses = '*'"
+    state=present
 
 #-  name: Configure PostgreSql to start at boot
 #   command: chkconfig postgresql on
