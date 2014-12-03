@@ -52,7 +52,7 @@
         db=pdns
         privs=ALL
         type=table
-        objs=domains,records
+        objs=domains,records,domainmetadata
         role=pdns
 
    - name: PowerDNS | Set privs for user 'pdns' (2)
