@@ -33,41 +33,58 @@ def find_certificate(addr, local_domain, algo):
     domain = parts[2]
       
     if algo == 1 or algo == 0:
+        logging.debug('Trying address bound DNS CERT')
         certs = certdisco.dns_cert(user + '.' + domain)
         if certs != []:
             for cert in certs:
-                logging.debug('Validating address bound DNS CERT certificate')
                 if certvld.validate(cert, local_domain, addr, domain, addressBound = True):
+                    logging.debug('A valid address bound DNS CERT was found')
                     return cert
+            logging.debug('No valid address bound DNS CERT found')
             return None
-    
+        logging.debug('No address bound DNS CERT found')
+
     if algo == 2 or algo == 0:
+        logging.debug('Trying domain bound DNS CERT')
         certs = certdisco.dns_cert(domain)
         if certs != []:
             for cert in certs:
                 if certvld.validate(cert, local_domain, addr, domain, addressBound = False):
+                    logging.debug('A valid domain bound DNS CERT was found')
                     return cert
+            logging.debug('No valid domain bound DNS CERT found')
             return None
+        logging.debug('No domain bound DNS CERT found')
 
     if algo == 3 or algo == 0:
+        logging.debug('Trying address bound LDAP')
         uris = certdisco.dns_srv(domain)
         for uri in uris:
             certs = certdisco.ldap_qry(uri, addr)
             if certs != []:
                 for cert in certs:
                     if certvld.validate(cert, local_domain, addr, domain, addressBound = True):
+                        logging.debug('A valid address bound LDAP was found using uri: ' + uri)
                         return cert
+                logging.debug('No valid address bound LDAP found using uri: ' + uri)
                 return None
+            logging.debug('No address bound LDAP found using uri: ' + uri)
+        logging.debug('No address bound LDAP found')
 
     if algo == 4 or algo == 0:
+        logging.debug('Trying domain bound LDAP')
         uris = certdisco.dns_srv(domain)
         for uri in uris:
             certs = certdisco.ldap_qry(uri, domain)
             if certs != []:
                 for cert in certs:
                     if certvld.validate(cert, local_domain, addr, domain, addressBound = False):
+                        logging.debug('A valid domain bound LDAP was found using uri: ' + uri)
                         return cert
+                logging.debug('No valid domain bound LDAP found using uri: ' + uri)
                 return None
+            logging.debug('No domain bound LDAP found using uri: ' + uri)
+        logging.debug('No domain bound LDAP found')
 
     return None
 
@@ -100,9 +117,12 @@ def send_message(sender, recipient, message_id, message):
 
     logging.debug('Certificate discovery algorithm: %s', algo)
     if (dom != None) and (dom[3] == 5): #cert_disco_algo = local (cert saved to database)
+        logging.debug('Trying local CERT stored in database')
         to_cert = None
         if certvld.validate(dom[2], sender_domain, recipient, domain, addressBound = False):
+            logging.debug('A valid local CERT stored in database was found')
             to_cert = dom[2]
+        logging.debug('No local CERT found')
     else:
         to_cert = find_certificate(recipient, sender_domain, algo)
 
@@ -110,9 +130,11 @@ def send_message(sender, recipient, message_id, message):
         logging.warning('Recipient certificate not found: %s', recipient)
         return 1
 
-    logging.debug('Encrypting message')
+    logging.debug('Securing message')
     cms = crypto.to_smime(message, from_key, from_cert, to_cert)
-    logging.debug('Sending encrypted mail message to: %s', recipient)
+    logging.debug('Message secured')
+
+    logging.debug('Queueing encrypted mail message for: %s', recipient)
     command = ('/usr/sbin/sendmail', '-f', sender, '--', recipient)
     proc = subprocess.Popen(command, stdin=subprocess.PIPE)
 
@@ -123,7 +145,7 @@ def send_message(sender, recipient, message_id, message):
     proc.communicate()
     status = proc.returncode
     if status == 0:
-        logging.debug('Message sent: %s: %s', message_id, recipient)
+        logging.debug('Message queued: %s: %s', message_id, recipient)
     else:
         logging.warning('Send message failed: %s: %s', message_id, recipient)
     return status

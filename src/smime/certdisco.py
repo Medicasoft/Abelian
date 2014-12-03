@@ -48,6 +48,8 @@ def dns_cert(addr):
         logging.warning('CERT query failed: %s: no nameservers available:', addr)
     except Timeout:
         logging.warning('CERT query failed: %s: timeout:', addr)
+
+    logging.debug('Certificates found: %s', len(certs))  
     return certs
 
 def dns_srv(addr):
@@ -55,8 +57,11 @@ def dns_srv(addr):
     try:
         logging.info('Sending SRV query: %s', addr)
         srv = dns.resolver.query('_ldap._tcp.' + addr, 'SRV')
+        logging.debug('Sorting entries by priority (asc) and weight (desc)')
         for cert in sorted(srv, key = lambda x : (x.priority, -x.weight)):
-            certs.append('ldap://{0}:{1}'.format('.'.join(cert.target[:-1]), cert.port))
+            ldap_addr = 'ldap://{0}:{1}'.format('.'.join(cert.target[:-1]), cert.port)
+            logging.debug('Received LDAP address: %s, priority: %s, weight: %s', ldap_addr, cert.priority, cert.weight)
+            certs.append(ldap_addr)
     except dns.resolver.NXDOMAIN:
         logging.warning('SRV query failed: %s: query name does not exist', addr)
     return certs
@@ -64,9 +69,11 @@ def dns_srv(addr):
 def ldap_qry(uri, mail):
     certs = []
     try:
+        logging.debug('Querying LDAP uri: ' + uri)
         l = ldap.initialize(uri)
         res = l.search_s('', ldap.SCOPE_SUBTREE, '(mail={0})'.format(mail), ['userCertificate'])
         for dn, uc in res:
+            logging.debug('Received LDAP user certificate')
             certs.extend(uc['userCertificate'])
     except ldap.LDAPError as x:
         logging.warning('LDAP query failed: %s: %s', x, mail)

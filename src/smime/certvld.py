@@ -20,6 +20,7 @@ CADIR = '/var/spool/direct/ca'
 
 def validate(cert, local_domain, addr, domain, addressBound = True):
     c = crypto.X509.load_cert_der_string(cert)
+    logging.debug('Validating certificate CN = ' + c.get_subject().CN)
     #check binding to expected entity
     if not verify_binding(c, addr, domain, addressBound):
         return False
@@ -80,6 +81,7 @@ def verify_cert(cert, local_domain, addr):
     proc.stdin.write(cert.as_pem())
     stdout, stderr = proc.communicate()
     if (proc.returncode == 0) and (stdout.strip() == "stdin: OK"):
+        logging.debug('Validation succeeded: CN = ' + cert.get_subject().CN)
         return True
     logging.debug('Validation failed: %s', stdout)
     return False

@@ -38,6 +38,8 @@ def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128
             signature += line
         thread.join()
         logging.debug('Message signed')
+        
+        logging.debug('Encrypting message')
 
         #signature = smime.sign(BIO.MemoryBuffer(message), flags=SMIME.PKCS7_DETACHED)
         #init buffer
@@ -56,6 +58,7 @@ def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128
         smime.write(out, message_encrypted)
         out.close()
 
+        logging.debug('Message encrypted')
         return out.read().replace('x-pkcs7-mime', 'pkcs7-mime')
     except SMIME.SMIME_Error, e:
         logging.error('smime error: %s', e)
