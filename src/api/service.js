@@ -143,7 +143,7 @@ function sendMessage(req, res, next) {
 			return;
 		}
 		if(err.code === 1) {
-			res.send(422, 'Validation failed');
+			res.send(422, err.message);
 			return;
 		}
 		
@@ -151,16 +151,30 @@ function sendMessage(req, res, next) {
 	});
 }
 
+
+var list_tag = '[smime_errors] ';
+
 function saveMessage(req, callback) {
     var child = cp.exec('./smimesend.py', {cwd: '/var/spool/direct/' }, function(err, stdout, stderr) {
-        if(stderr !== '')
-            console.error('smimesend.py stderr: ' + stderr);
+	if(err) {
+	    var i = stderr.lastIndexOf(list_tag) + list_tag.length;
+	    var relevantErrMsg;
+	    if(i === -1) {
+		relevantErrMsg = 'Unknown error on sending DIRECT mail';
+	    }
+	    else {
+	    	var j = stderr.indexOf('\n', i);
+	        relevantErrMsg = j !== -1 ? stderr.substring(i, j) : stderr.substring(i);
+	    }
+            err.message = relevantErrMsg;
+	}
        
-		callback(err);
+	callback(err);
 	});
     child.stdin.write(req.body);
 	child.stdin.end();
 }
+
 
 function deleteMessage(req, res, next) {
 	pg.connect(connString, function(err, client, done) {  

@@ -183,9 +183,13 @@ if __name__ == "__main__":
         exit(2)
     recipients = email.Utils.getaddresses(msg.get_all('to',[]) + msg.get_all('cc', []))
     message_id = msg['message-id']
-    retval = 0
+    retval = ''
     for recipient in recipients:
         err = send_message(sender, recipient[1], message_id, eml)
         if err != 0:
-            retval = err
-    exit(retval)
+            retval += recipient[1] + '; ' 
+    if retval != '':
+        retval = '[smime_errors] Could not send DIRECT mail to the following recipient(s): ' + retval
+    	exit(retval)
+    exit()
+	
