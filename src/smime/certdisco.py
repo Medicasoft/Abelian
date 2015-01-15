@@ -64,6 +64,8 @@ def dns_srv(addr):
             certs.append(ldap_addr)
     except dns.resolver.NXDOMAIN:
         logging.warning('SRV query failed: %s: query name does not exist', addr)
+    except dns.resolver.NoAnswer:
+        logging.warning('SRV query failed: %s: no answer', addr)
     return certs
 
 def ldap_qry(uri, mail):
