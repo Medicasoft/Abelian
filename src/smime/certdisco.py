@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import dns.resolver, ldap, logging
+import dns.resolver, dns.exception, ldap, logging
 CERT_TEMPLATE = """
 -----BEGIN CERTIFICATE-----
 %s
@@ -35,6 +35,7 @@ def dns_cert(addr):
             elif rdata.certificate_type == 4: #IPKIX
                 import requests
                 #try GETting it from url (DER)
+                logging.info('Try getting from url ' + answer[3]);
                 res = requests.get(answer[3])
                 if res.status_code != 200:
                     logging.warning('IPKIX certificate download failed: %s: %s', addr, answer[3])
@@ -46,7 +47,7 @@ def dns_cert(addr):
         logging.warning('CERT query failed: %s: no answer:', addr)
     except dns.resolver.NoNameservers:
         logging.warning('CERT query failed: %s: no nameservers available:', addr)
-    except Timeout:
+    except dns.exception.Timeout:
         logging.warning('CERT query failed: %s: timeout:', addr)
 
     logging.debug('Certificates found: %s', len(certs))  
@@ -66,6 +67,10 @@ def dns_srv(addr):
         logging.warning('SRV query failed: %s: query name does not exist', addr)
     except dns.resolver.NoAnswer:
         logging.warning('SRV query failed: %s: no answer', addr)
+    except dns.resolver.NoNameservers:
+        logging.warning('SRV query failed: %s: no nameservers available:', addr)
+    except dns.exception.Timeout:
+        logging.warning('SRV query failed: %s: timeout:', addr)
     return certs
 
 def ldap_qry(uri, mail):
