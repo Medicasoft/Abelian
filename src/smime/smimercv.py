@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 """ Copyright 2014 MedicaSoft LLC USA and Info World SRL
 Licensed under the Apache License, Version 2.0 the "License";
 you may not use this file except in compliance with the License.
@@ -12,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-#!/usr/bin/python
 import sys, os, subprocess, email, psycopg2, logging, smimesend
 from email.parser import Parser
 from M2Crypto import BIO, SMIME, X509
