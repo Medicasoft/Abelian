@@ -2,25 +2,31 @@
 # Licensed under the Apache License, Version 2.0 the "License";
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# - name: Update repositories cache 
-  # apt: update_cache=yes      
-- name: Add Extra Packages for Enterprise Linux repository 
-  yum: name="http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-2.noarch.rpm" state=present
+# - name: Update repositories cache
+  # apt: update_cache=yes
+###- name: Add Extra Packages for Enterprise Linux repository
+###  yum: name="http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-2.noarch.rpm" state=present
+
+- name: Bootstrap epel-release install
+  copy: src=bootstrap-epel-release.repo dest=/etc/yum.repos.d/ owner=root group=root mode=0644
+
+- name: Install epel-release
+  yum: name="epel-release" enablerepo=bootstrap-epel-release state=present
 
 - name: Install unzip
   yum: name=unzip state=present
 
 - name: Install wget
-  yum: name=wget state=present 
+  yum: name=wget state=present
 
 - name: Install the Development tools package group
   yum: name="@Development tools" state=present
@@ -47,8 +53,8 @@
     - "{{SPOOL}}/tmp"
     - "{{SPOOL}}/tools"
     - /home/root/
-    - /home/root/direct 
-    - /var/run/forever    
+    - /home/root/direct
+    - /var/run/forever
 
 - name: Copy scripts in {{SPOOL}}/tools folder
   copy: src=../../src/tools/ dest={{SPOOL}}/tools/
@@ -60,13 +66,13 @@
   file: path=~direct/.bash_profile state=touch
 
 - name: Add {{SPOOL}}/tools folder to PATH for direct user
-  lineinfile: dest=~direct/.bash_profile line='{{item}}' state=present 
+  lineinfile: dest=~direct/.bash_profile line='{{item}}' state=present
   with_items:
     - "PATH=$PATH:{{SPOOL}}/tools:{{SPOOL}}/tools/bin"
     - "export PATH"
 
 - name: Install python-pip
-  yum: name=python-pip state=present  
-  
+  yum: name=python-pip state=present
+
 - name: Copy c_rehash
   copy: src=files/c_rehash dest={{SPOOL}}/tools/bin/ mode=755

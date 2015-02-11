@@ -2,51 +2,64 @@
 # Licensed under the Apache License, Version 2.0 the "License";
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+   - name: Install PDNS repo
+     command: yum-config-manager --add-repo https://www.monshouwer.eu/download/3rd_party/pdns/el6/pdns.el6.repo
+     when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+
+   - name: Install PDNS recursor repo
+     command: yum-config-manager --add-repo https://www.monshouwer.eu/download/3rd_party/pdns-recursor/el6/pdns-recursor.el6.repo
+     when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+
    - name: PowerDNS | Install PowerDNS from EPEL
      yum: name={{item}} state=present
      with_items:
         - pdns
         - pdns-backend-postgresql.x86_64
-   
+
    - name: PowerDNS | Configuration - set resolv.conf to use local server for resolve
      lineinfile: dest=/etc/resolv.conf line="nameserver 127.0.0.1" state=present
-   
+
    - name: Ensure /etc/conf.d exists
      file: path=/etc/conf.d state=directory
-     
+
    - name: Ensure /etc/conf.d/net exists
      file: path=/etc/conf.d/net state=touch
-   
-   - name: PowerDNS | Configuration - set conf.d/net such as dhcp client won't replace resolv.conf 
+
+   - name: PowerDNS | Configuration - set conf.d/net such as dhcp client won't replace resolv.conf
      lineinfile: dest=/etc/conf.d/net line='dhcpcd_eth0="-R"' state=present
-     
+
    - name: PowerDNS | Create the pdns database
      postgresql_db: name=pdns state=present owner=postgres
      sudo_user: "{{postgresql_admin_user}}"
-  
+
    - name: PowerDNS | Create the pdns tables
      shell: /bin/sh -c "psql -d pdns -f /usr/share/doc/pdns-backend-postgresql*/{{item}}"
      with_items:
         - schema.pgsql.sql
      sudo_user: "{{postgresql_admin_user}}"
+     when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
+
+   - name: PowerDNS | Create the pdns tables
+     shell: /bin/sh -c "psql -d pdns -f /usr/share/doc/pdns/{{item}}"
+     with_items:
+        - schema.pgsql.sql
+     sudo_user: "{{postgresql_admin_user}}"
+     when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+
 
    - name: PowerDNS | Create the user 'pdns'
      postgresql_user: name=pdns state=present password={{pdns_password}} role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE
      sudo_user: "{{postgresql_admin_user}}"
- 
-   - name: PowerDNS | Create the user 'pdns'
-     postgresql_user: name=pdns state=present password={{pdns_password}} role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE
-     sudo_user: "{{postgresql_admin_user}}"
- 
+
    - name: PowerDNS | Set privs for user 'pdns'
      postgresql_privs: >
         db=pdns
@@ -62,7 +75,7 @@
         type=sequence
         objs=domains_id_seq,records_id_seq
         role=pdns
-  
+
    - name: PowerDNS | Set privs for user 'pdns' (3)
      postgresql_privs: >
         db=pdns
@@ -72,7 +85,7 @@
         role=pdns
 
    - name: PowerDNS | Configure pdns.conf
-     lineinfile: dest=/etc/pdns/pdns.conf line="{{item}}" state=present      
+     lineinfile: dest=/etc/pdns/pdns.conf line="{{item}}" state=present
      with_items:
         - "setuid=pdns"
         - "setgid=pdns"
@@ -91,26 +104,26 @@
      # file: name=/etc/powerdns/pdns.d/pdns.simplebind.conf state=absent
      # notify:
        # - Restart pdns
-    
+
    - name: PowerDNS | Create temp sql script directory
      file: name={{TEMP_SQL_PATH}} state=directory mode=770 owner=postgres group=postgres
- 
+
    - name: Save certificate info
      shell: openssl x509 -in "{{SPOOL}}/ca/cert/{{MAIL_DOMAIN}}/direct.pem" -modulus | awk '
           BEGIN {ORS=" ";OFS=" ";PKIX=1;RSASHA1=5}
           {
-            if(NR==1) printf("%d %d %d ",PKIX,strtonum("0x" substr($0,length($0)-3)),RSASHA1);               
+            if(NR==1) printf("%d %d %d ",PKIX,strtonum("0x" substr($0,length($0)-3)),RSASHA1);
             if(NR>3) print l;
             l=$0;
          }'
      register: CERT
      sudo: yes
-     
+
    - name: PowerDNS | Prepare pdns database script
-     template: src=templates/pdns_db.j2 dest={{TEMP_SQL_PATH}}/pdns_db.sql  mode=774    
+     template: src=templates/pdns_db.j2 dest={{TEMP_SQL_PATH}}/pdns_db.sql  mode=774
 
    - name: PowerDNS | Fill pdns database
-     command: psql -d pdns -f {{TEMP_SQL_PATH}}/pdns_db.sql    
+     command: psql -d pdns -f {{TEMP_SQL_PATH}}/pdns_db.sql
      sudo_user: "{{postgresql_admin_user}}"
      when: pdns_fill_database
      notify:
@@ -119,8 +132,10 @@
    - name: PowerDNS | Remove temp script file
      file: name={{TEMP_SQL_PATH}}/pdns_db.sql state=absent
 
+### do we need to copy the init.d script?
    - name: Copy Init Script
      copy: src=files/init.d_pdns dest=/etc/init.d/pdns mode=775 owner=root
+     when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
 
    - name: PowerDNS | Add service to boot
      command: chkconfig --add pdns
@@ -128,9 +143,9 @@
    - name: PowerDNS | Enable service on boot
      command: chkconfig pdns on
 
-   - name: PowerDNS | Start service  
+   - name: PowerDNS | Start service
      service: name=pdns state=started
-      
+
 
    #- name: Configure pdnssec
    #  command: pdnssec rectify-zone {{DOMAIN}}

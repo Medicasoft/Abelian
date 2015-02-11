@@ -38,6 +38,7 @@
      pip: name={{item}} state=present
      with_items:
         - psycopg2
+        - argparse
         - dnspython
         
    - name: Copy server files to remote node    

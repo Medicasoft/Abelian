@@ -34,7 +34,10 @@ ELASTICSEARCH_HTTP_URL: "http://rh2.medicasoft.us:80"
 KIBANA_LOGIN_USERNAME: "abelian"
 KIBANA_LOGIN_PASSWORD: "password"
 
+#true if abelian is installed on the same machine as the nxt application (db server)
+ALL_IN_ONE: true
 
+INSTALL_KIBANA: false
 #other paths and settings
 SPOOL: "/var/spool/direct"      
 TEMP_SQL_PATH: "/home/sql-direct-tmp"

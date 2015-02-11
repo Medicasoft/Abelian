@@ -2,9 +2,9 @@
 # Licensed under the Apache License, Version 2.0 the "License";
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,23 +13,28 @@
 
 ---
 - hosts: all
-  vars_files:    
+  vars_files:
     - vars/vars.yml
-  sudo: yes  
+  sudo: yes
 
-  tasks:  
+  tasks:
     - include: tasks/prereqs.yml
-    - include: tasks/postgres.yml 
-    - include: tasks/certificates.yml 
-    - include: tasks/pdns.yml    
+    - include: tasks/postgres.yml
+      when: ALL_IN_ONE == False
+    - include: tasks/certificates.yml
+    - include: tasks/pdns.yml
     - include: tasks/pyscripts.yml
-    - include: tasks/postfix.yml            
+    - include: tasks/postfix.yml
     - include: tasks/api_install.yml
-    - include: tasks/api_deploy.yml        
-    - include: tasks/elasticsearch.yml    
+    - include: tasks/api_deploy.yml
+    - include: tasks/elasticsearch.yml
+      when: INSTALL_KIBANA == True
     - include: tasks/logstash.yml
+      when: INSTALL_KIBANA == True
     - include: tasks/kibana.yml
+      when: INSTALL_KIBANA == True
     - include: tasks/nginx.yml
-    
-  handlers: 
+      when: INSTALL_KIBANA == True
+
+  handlers:
     - include: handlers/handlers.yml

@@ -38,12 +38,17 @@
        - openldap
        - openldap-devel
         
-     
    - name: Postfix | Copy header db.h
      command: cp /usr/include/libdb4/db.h /usr/include
+     when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
 
-   - name: Postfix | Execute make makefiles
+   - name: Postfix | Execute make makefiles1
      command: chdir=/usr/local/src/postfix-2.11.1 make makefiles CCARGS='-fPIC -DUSE_TLS -DUSE_SSL -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -DPREFIX=\\"/usr\\" -DHAS_PCRE -I/usr/include/openssl -DHAS_PGSQL -I/usr/include/pgsql -I/usr/include/sasl -I/usr/include' AUXLIBS='-L/usr/lib64 -L/usr/lib64/libdb4 -L/usr/lib64/openssl -lssl -lcrypto -L/usr/lib64/pgsql -lpq -L/usr/lib64/sasl2 -lsasl2 -lpcre -lz -lm -lldap -llber -Wl,-rpath,/usr/lib64/openssl -pie -Wl,-z,relro' OPT='-O' DEBUG='-g'
+     when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
+
+   - name: Postfix | Execute make makefiles2
+     command: chdir=/usr/local/src/postfix-2.11.1 make makefiles CCARGS='-fPIC -DUSE_TLS -DUSE_SSL -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -DPREFIX=\\"/usr\\" -DHAS_PCRE -I/usr/include/openssl -DHAS_PGSQL -I/usr/pgsql-9.2/lib -I/usr/include/sasl -I/usr/pgsql-9.2/include -I/usr/include' AUXLIBS='-L/usr/lib64 -L/usr/lib64/libdb4 -L/usr/lib64/openssl -lssl -lcrypto -L/usr/pgsql-9.2/lib -lpq -L/usr/lib64/sasl2 -lsasl2 -lpcre -lz -lm -lldap -llber -Wl,-rpath,/usr/lib64/openssl -pie -Wl,-z,relro' OPT='-O' DEBUG='-g'
+     when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
 
    - name: Postfix | Execute make
      command: chdir=/usr/local/src/postfix-2.11.1 make
@@ -75,12 +80,16 @@
      postgresql_user: name=postfix state=present password={{POSTFIX_PASSWORD}} db=maildb role_attr_flags=LOGIN
      sudo_user: "{{postgresql_admin_user}}"
    
-   - name: Grant privileges to user
+   - name: Grant privileges on tables to user
      postgresql_privs: database=maildb roles=postfix schema=public type=table objs=ALL_IN_SCHEMA grant_option=yes state=present priv=ALL
      sudo_user: "{{postgresql_admin_user}}"
-  
+
+   - name: Grant privileges on users_id_seq to user
+     postgresql_privs: database=maildb roles=postfix schema=public type=sequence objs=users_id_seq grant_option=yes state=present priv=ALL
+     sudo_user: "{{postgresql_admin_user}}"
+
    - name: Set authentication method for postfix
-     lineinfile: dest=/var/lib/pgsql/data/pg_hba.conf           
+     lineinfile: dest=/var/lib/pgsql/9.2/data/pg_hba.conf           
            regexp='(# Put your actual configuration here\n)(local   maildb          postfix                                 password)?'
            backrefs=yes 
            state=present 
@@ -90,7 +99,7 @@
      # - Reload postgres
   
    - name: Postfix | Reload postgres after setting authentication method
-     service: name=postgresql state=reloaded
+     service: name=postgresql-9.2 state=reloaded
    
    - name: Postfix | Add local domain to domains database
      command: "{{SPOOL}}/tools/direct_domain add -d {{MAIL_DOMAIN}} -t local"
@@ -113,6 +122,6 @@
         - "-e 'virtual_mailbox_maps = pgsql:/etc/postfix/pgsql/virtual_mailbox_maps.cf'"
         - "-M direct-rx/unix='direct-rx unix - n n - - pipe flags=RXq user=direct argv=/var/spool/direct/smimercv.py ${queue_id} ${recipient} ${sender}'"
      notify: 
-     - Reload postfix
+     - Restart postfix
      
 
