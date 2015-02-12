@@ -18,7 +18,7 @@ if(!/\/$/.test(baseUrl)) //ensure it ends with '/'
     baseUrl += '/';
     
 module.exports = {
-    connString: "/var/run/postgresql maildb",
+    connString: "/tmp maildb",
     port: port,
     baseUrl: baseUrl,
 

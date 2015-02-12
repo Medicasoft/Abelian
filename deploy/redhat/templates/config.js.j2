@@ -4,10 +4,10 @@ if(!/\/$/.test(baseUrl)) //add ending '/' if not exists
     baseUrl += '/';
 
 module.exports = {
-    connString: "/var/run/postgresql maildb",
+    connString: "/tmp maildb",
     port: port,
     baseUrl: baseUrl,
 
-	//paging for resource search 
+	//paging for resource search
     pageSize: 10
 };
