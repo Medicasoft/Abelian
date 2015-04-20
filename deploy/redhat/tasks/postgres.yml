@@ -11,36 +11,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Install PGDG
-  yum: name=http://yum.postgresql.org/9.2/redhat/rhel-6-x86_64/pgdg-centos92-9.2-6.noarch.rpm
-  when: ansible_distribution == "CentOS"
+- name: Install PGDG CentOS 6
+  yum: name=http://yum.postgresql.org/9.3/redhat/rhel-6-x86_64/pgdg-centos93-9.3-1.noarch.rpm
+  when: ansible_distribution == "CentOS" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
   sudo: yes
 
-- name: Install PGDG2
-  command: yum install http://yum.postgresql.org/9.2/redhat/rhel-6-x86_64/pgdg-redhat92-9.2-7.noarch.rpm
-  when: ansible_distribution == "RedHat"
+- name: Install PGDG RedHat 6
+  yum: name=http://yum.postgresql.org/9.3/redhat/rhel-6-x86_64/pgdg-redhat93-9.3-1.noarch.rpm
+  when: ansible_distribution == "CentOS" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+  sudo: yes
+
+- name: Install PGDG CentOS 7
+  yum: name=http://yum.postgresql.org/9.3/redhat/rhel-7-x86_64/pgdg-centos93-9.3-1.noarch.rpm
+  when: ansible_distribution == "CentOS" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
+  sudo: yes
+
+- name: Install PGDG RedHat 7
+  yum: name=http://yum.postgresql.org/9.3/redhat/rhel-7-x86_64/pgdg-redhat93-9.3-1.noarch.rpm
+  when: ansible_distribution == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
+  sudo: yes
 
 - name: Install PostgreSql packages
   yum: name={{ item }} state=present
   with_items:
-    - postgresql92-server
+    - postgresql93-server
+    - postgresql93-contrib
     - python-psycopg2
 
 - name: Initialize new PostgreSql cluster
-  command: service postgresql-9.2 initdb
+  command: /usr/pgsql-9.3/bin/postgresql93-setup initdb
   args:
-    creates: /var/lib/pgsql/9.2/data/postgresql.conf
+    creates: /var/lib/pgsql/9.3/data/postgresql.conf
 
 -  name: Configure pg_hba.conf
    template:
         src: templates/pg_hba.conf.j2
-        dest: "/var/lib/pgsql/9.2/data/pg_hba.conf"
+        dest: "/var/lib/pgsql/9.3/data/pg_hba.conf"
         owner: "{{ postgresql_admin_user }}"
         group: "{{ postgresql_admin_user }}"
         mode: 0640
 
 - name: Ensure PostgreSQL is listening on all addresses
-  lineinfile: dest=/var/lib/pgsql/9.2/data/postgresql.conf
+  lineinfile: dest=/var/lib/pgsql/9.3/data/postgresql.conf
     regexp='^#?listen_addresses\s*='
     line="listen_addresses = '*'"
     state=present
@@ -49,4 +61,4 @@
 #   command: chkconfig postgresql on
 
 -  name: Check postgresql started and set it to be started at boot
-   service: name=postgresql-9.2 state=started enabled=yes
+   service: name=postgresql-9.3 state=started enabled=yes
