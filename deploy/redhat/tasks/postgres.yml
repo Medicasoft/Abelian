@@ -18,7 +18,7 @@
 
 - name: Install PGDG RedHat 6
   yum: name=http://yum.postgresql.org/9.3/redhat/rhel-6-x86_64/pgdg-redhat93-9.3-1.noarch.rpm
-  when: ansible_distribution == "CentOS" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
+  when: ansible_distribution == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
   sudo: yes
 
 - name: Install PGDG CentOS 7
@@ -38,10 +38,17 @@
     - postgresql93-contrib
     - python-psycopg2
 
-- name: Initialize new PostgreSql cluster
+- name: Initialize new PostgreSql cluster RedHat-CentOS 6
+  command: /etc/init.d/postgresql-9.3 initdb
+  args:
+    creates: /var/lib/pgsql/9.3/data/postgresql.conf
+  when: "{{ ansible_distribution_version | version_compare('7.0', '<') }}"
+
+- name: Initialize new PostgreSql cluster RedHat-CentOS 7
   command: /usr/pgsql-9.3/bin/postgresql93-setup initdb
   args:
     creates: /var/lib/pgsql/9.3/data/postgresql.conf
+  when: "{{ ansible_distribution_version | version_compare('7.0', '>=') }}"
 
 -  name: Configure pg_hba.conf
    template:
