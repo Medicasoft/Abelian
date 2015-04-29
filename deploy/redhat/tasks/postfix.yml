@@ -20,7 +20,7 @@
  
        
    - name: Postfix | Download archive
-     get_url: url=ftp://ftp.porcupine.org/mirrors/postfix-release/official/postfix-2.11.1.tar.gz dest=/usr/local/src/
+     get_url: url=ftp://ftp.porcupine.org/mirrors/postfix-release/official/postfix-2.11.1.tar.gz dest=/usr/local/src/ timeout=60
    
    - name: Postfix | Unarchive download
      command: chdir=/usr/local/src/ tar xzvf postfix-2.11.1.tar.gz
