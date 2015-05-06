@@ -16,6 +16,12 @@
 ###- name: Add Extra Packages for Enterprise Linux repository
 ###  yum: name="http://dl.fedoraproject.org/pub/epel/7/x86_64/e/epel-release-7-2.noarch.rpm" state=present
 
+- name: Install libselinux-python
+  yum: name=libselinux-python state=present
+
+- name: Remove require tty
+  lineinfile: regexp=".*Defaults.*requiretty" line="# Defaults requiretty" dest=/etc/sudoers state=present
+
 - name: Bootstrap epel-release install
   copy: src=bootstrap-epel-release.repo dest=/etc/yum.repos.d/ owner=root group=root mode=0644
 
