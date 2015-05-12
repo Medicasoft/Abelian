@@ -12,10 +12,10 @@
 # limitations under the License.
 
   -  name: Generate root server certificate - root.key        
-     command: openssl genrsa -out "/home/root/direct/root.key" 2048
+     command: openssl genrsa -out "/home/root/direct/{{MAIL_DOMAIN}}/root.key" 2048
 
   -  name: Generate root server certificate public trust anchor - root.pem
-     command: openssl req -new -x509 -days 365 -subj "/CN={{MAIL_DOMAIN}}_ca" -key "/home/root/direct/root.key" -out "{{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}/root.pem"
+     command: openssl req -new -x509 -days 365 -subj "/CN={{MAIL_DOMAIN}}_ca" -key "/home/root/direct/{{MAIL_DOMAIN}}/root.key" -out "{{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}/root.pem"
 
   -  name: Rehash trust store for local domain
      command: "{{SPOOL}}/tools/bin/c_rehash {{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}/"
@@ -31,7 +31,7 @@
      command: openssl req -new -subj "/CN={{MAIL_DOMAIN}}" -key "{{SPOOL}}/ca/key/{{MAIL_DOMAIN}}/direct.key" -out "{{SPOOL}}/ca/key/{{MAIL_DOMAIN}}/direct.csr" -config "{{SPOOL}}/tools/req_ext.conf"
 
   -  name: Generate server certificates for mail root - direct.pem
-     command: openssl x509 -req -days 365 -in "{{SPOOL}}/ca/key/{{MAIL_DOMAIN}}/direct.csr" -CA "{{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}/root.pem" -CAkey "/home/root/direct/root.key" -set_serial 1 -out "{{SPOOL}}/ca/cert/{{MAIL_DOMAIN}}/direct.pem" -setalias "Self Signed SMIME" -addtrust emailProtection -addreject clientAuth -addreject serverAuth -trustout -extfile "{{SPOOL}}/tools/req_ext.conf" -extensions v3_ext
+     command: openssl x509 -req -days 365 -in "{{SPOOL}}/ca/key/{{MAIL_DOMAIN}}/direct.csr" -CA "{{SPOOL}}/ca/trust/{{MAIL_DOMAIN}}/root.pem" -CAkey "/home/root/direct/{{MAIL_DOMAIN}}/root.key" -set_serial 1 -out "{{SPOOL}}/ca/cert/{{MAIL_DOMAIN}}/direct.pem" -setalias "Self Signed SMIME" -addtrust emailProtection -addreject clientAuth -addreject serverAuth -trustout -extfile "{{SPOOL}}/tools/req_ext.conf" -extensions v3_ext
 
   -  name: Remove csr file
      file: path={{SPOOL}}/ca/key/{{MAIL_DOMAIN}}/direct.csr state=absent  

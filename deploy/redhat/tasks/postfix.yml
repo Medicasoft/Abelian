@@ -104,6 +104,11 @@
    - name: Postfix | Add local domain to domains database
      command: "{{SPOOL}}/tools/direct_domain add -d {{MAIL_DOMAIN}} -t local"
      sudo_user: direct
+     notify:
+       - Restart postfix
+     tags:
+       - add_domain
+
      
    - name: Postfix | Add virtual maps
      template: src=templates/{{item}} dest=/etc/postfix/pgsql/{{item}}
