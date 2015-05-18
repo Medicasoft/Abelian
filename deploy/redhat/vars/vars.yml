@@ -35,7 +35,7 @@ KIBANA_LOGIN_USERNAME: "abelian"
 KIBANA_LOGIN_PASSWORD: "password"
 
 #true if abelian is installed on the same machine as the nxt application (db server)
-ALL_IN_ONE: true
+ALL_IN_ONE: false
 
 INSTALL_KIBANA: false
 #other paths and settings
