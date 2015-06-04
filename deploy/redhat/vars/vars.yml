@@ -41,7 +41,7 @@ INSTALL_KIBANA: false
 #other paths and settings
 SPOOL: "/var/spool/direct"      
 TEMP_SQL_PATH: "/home/sql-direct-tmp"
-POSTFIX_PASSWORD: "{{lookup('password', 'credentials/postfixpass length=10')}}"
+POSTFIX_PASSWORD: "{{lookup('password', 'credentials/postfixpass length=10 chars=ascii_letters,digits')}}"
 
 
 #postgres

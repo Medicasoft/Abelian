@@ -22,11 +22,14 @@
 - name: Remove require tty
   lineinfile: regexp=".*Defaults.*requiretty" line="# Defaults requiretty" dest=/etc/sudoers state=present
 
-- name: Bootstrap epel-release install
-  copy: src=bootstrap-epel-release.repo dest=/etc/yum.repos.d/ owner=root group=root mode=0644
+ # - name: Bootstrap epel-release install
+ #  copy: src=bootstrap-epel-release.repo dest=/etc/yum.repos.d/ owner=root group=root mode=0644
+
+# - name: Install epel-release
+#   yum: name="epel-release" enablerepo=bootstrap-epel-release state=present
 
 - name: Install epel-release
-  yum: name="epel-release" enablerepo=bootstrap-epel-release state=present
+  yum: name=http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm state=present
 
 - name: Install unzip
   yum: name=unzip state=present
