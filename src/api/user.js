@@ -207,6 +207,27 @@ function executeSql(req, res, next, type, queryType, params, successCode) {
             client.query(qry, params, function (err, result) {
                 done();
                 if (err) {
+                    if(err.code === '23505' && type.toLowerCase() === 'user' && err.message.indexOf('users_address_key') !== -1) {
+                        var outcome = {
+                            resourceType: "OperationOutcome",
+                            issue: [{
+                                "severity" : "error",
+                                "code" : {
+                                    "coding": [
+                                      {
+                                        "system": "http://hl7.org/fhir/issue-type",
+                                        "code": "duplicate",
+                                        "display": "Duplicate"
+                                      }
+                                    ],
+                                    "text": "Duplicate"
+                                },
+                                "details" : "Email address already exists!"
+                            }]
+                        };
+                        res.send(422, outcome);
+                        return next(false);
+                    }
                     console.error('error running query', err);
                     res.send(500);
                     return next();
