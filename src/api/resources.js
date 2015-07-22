@@ -140,7 +140,19 @@ function getEntities(req, res, next, type) {
                     where += ' and ';
                 else
                     isFirst = false;
+                if (typeof req.query[elem] === 'string' && req.query[elem].indexOf(',') >= 0) {
+                    var parts = req.query[elem].split(',');
+                    where += '(';
+                    for (var i =0; i < parts.length; i += 1) {
+                        if (i> 0) {
+                            where += ' or ';
+                        }
+                        where += util.format(meta.search[elem], parts[i]);
+                    }
+                    where += ')';
+                } else {
                 where += util.format(meta.search[elem], req.query[elem]);
+                }
             }
         }
     }
