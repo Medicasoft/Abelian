@@ -53,6 +53,10 @@ server.listen(port, function() {
 });
 	
 function getMessage(req, res, next) {
+	if(req.query.type && ['msg', 'original'].indexOf(req.query.type) === -1) {
+		res.send(400, 'Type parameter expects a value from list: msg, original.');
+		return next(false);
+	}
 	pg.connect(connString, function(err, client, done) {  
 		if(err) {
 			console.error('error fetching client from pool', err);
@@ -66,12 +70,17 @@ function getMessage(req, res, next) {
 		            res.send(500);
 		            return next();
 		        }
-	                if (result.rowCount == 0) {
-        	            res.send(404);
-                	    return next();
-	                }
+                if (result.rowCount == 0) {
+    	            res.send(404);
+            	    return next();
+                }
 
-		        var msg = result.rows[0].msg;
+		        var msg;
+	            if(req.query.type && req.query.type === 'original') {
+			        msg = result.rows[0].original;
+			    } else {
+			        msg = result.rows[0].msg;
+			    }
 		        res.header('Content-Type', 'application/mime');
 		        res.send(200, msg);
 		    });
