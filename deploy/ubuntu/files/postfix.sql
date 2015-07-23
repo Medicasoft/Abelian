@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS messages
   msg text,
   recipient character varying,
   sender character varying,
+  domain character varying,
   CONSTRAINT id PRIMARY KEY (id)
 )
 WITH (

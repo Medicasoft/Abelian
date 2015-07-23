@@ -103,7 +103,9 @@ def process_message(queue_id, recipient, sender, message):
 def save_message(queue_id, recipient, sender, msg_orig, msg_plain):
     conn = psycopg2.connect(database='maildb', user='direct')
     cur = conn.cursor();
-    cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg) VALUES(%s,%s,%s,%s,%s);",(queue_id,recipient,sender,msg_orig,msg_plain))
+    tokens = recipient.split("@");
+    domain = tokens[1] if len(tokens) > 1 else None
+    cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg,domain) VALUES(%s,%s,%s,%s,%s,%s);",(queue_id,recipient,sender,msg_orig,msg_plain,domain))
     conn.commit()
 
 def send_mdn(sender, recipient, orig_message_id, subject, msg_plain):

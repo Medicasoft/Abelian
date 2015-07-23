@@ -18,7 +18,6 @@ var util = require('util'),
     config = require('./config');
 
 var connString = config.connString;
-var port = config.port;
 var baseUrl = config.baseUrl;
 
 
@@ -50,13 +49,21 @@ var resources = {
             //           update: 'UPDATE domains SET name=$2, anchor_path=$3, crl_path=$4, crypt_cert=$5, cert_disco_algo=$6 WHERE id=$1;',
             //           delete: 'DELETE FROM domains WHERE id = $1;'
         },
+        search : {
+            is_local: "is_local = %s",
+            name: "name = '%s'"
+        },
         toJson: domainToJson,
         urlSearchFragment: "Domains"
     },
     message: {
         queries: {
-            list: 'SELECT * FROM messages %s LIMIT $1 OFFSET $2;',
-            count: 'SELECT count(*) from messages %s;'
+            list: 'SELECT id, recipient, sender FROM messages %s ORDER BY id LIMIT $1 OFFSET $2;',
+            count: 'SELECT count(*) from messages %s;',
+            delete: 'DELETE FROM messages WHERE id = $1;'
+        },
+        search : {
+            domain: "domain = '%s'"
         },
         toJson: messageToJson,
         urlSearchFragment: "Messages"
@@ -75,7 +82,7 @@ var resources = {
         toJson: anchorToJson,
         urlSearchFragment: "Anchors"
     }
-}
+};
 
 
 function userToJson(row) {
@@ -95,7 +102,7 @@ function domainToJson(row) {
             name: row.name,
             anchor_path: row.anchor_path,
             crl_path: row.crl_path,
-            crypt_cert: row.crypt_cert,
+            // crypt_cert: row.crypt_cert, //hide field
             cert_disco_algo: row.cert_disco_algo,
             is_local: row.is_local
         }
