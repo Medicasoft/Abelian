@@ -12,8 +12,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//port - used to listen on localhost:<port>
 var port = 8085;
-var baseUrl = "http://localhost:" + port + "/";
+//baseUrl - public Abelian API URL to be included in Location: header and in bundles (port may be missing or different by localhost service port)
+var baseUrl = "http://localhost:8085/";
 if(!/\/$/.test(baseUrl)) //ensure it ends with '/' 
     baseUrl += '/';
     
