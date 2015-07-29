@@ -107,6 +107,9 @@
 
    - name: PowerDNS | Create temp sql script directory
      file: name={{TEMP_SQL_PATH}} state=directory mode=770 owner=postgres group=postgres
+     tags:
+       - add_domain
+       - add_root_and_domain
 
    - name: Save certificate info
      shell: openssl x509 -in "{{SPOOL}}/ca/cert/{{MAIL_DOMAIN}}/direct.pem" -modulus | awk '
@@ -120,9 +123,12 @@
      sudo: yes
      tags:
        - add_domain
+       - add_root_and_domain
 
    - name: PowerDNS | Prepare pdns database script
      template: src=templates/pdns_db.j2 dest={{TEMP_SQL_PATH}}/pdns_db.sql  mode=774
+     tags:
+       - add_root_and_domain
 
    - name: PowerDNS | Fill pdns database
      command: psql -d pdns -f {{TEMP_SQL_PATH}}/pdns_db.sql
@@ -130,15 +136,19 @@
      when: pdns_fill_database
      notify:
        - Restart pdns
+     tags:
+       - add_root_and_domain
 
    - name: PowerDNS | Remove temp script file
      file: name={{TEMP_SQL_PATH}}/pdns_db.sql state=absent
-
+     tags:
+       - add_root_and_domain
 
    - name: PowerDNS | Prepare pdns database script add domain
      template: src=templates/pdns_db_add_domain.j2 dest={{TEMP_SQL_PATH}}/pdns_db_add_domain.sql  mode=774
      tags:
        - add_domain
+       - add_root_and_domain
 
    - name: PowerDNS | Fill pdns database add domain
      command: psql -d pdns -f {{TEMP_SQL_PATH}}/pdns_db_add_domain.sql
@@ -148,11 +158,13 @@
        - Restart pdns
      tags:
        - add_domain
+       - add_root_and_domain
 
    - name: PowerDNS | Remove temp script file (add domain)
      file: name={{TEMP_SQL_PATH}}/pdns_db_add_domain.sql state=absent
      tags:
        - add_domain
+       - add_root_and_domain
 
 ### do we need to copy the init.d script?
    - name: Copy Init Script

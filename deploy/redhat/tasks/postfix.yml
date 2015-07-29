@@ -108,6 +108,7 @@
        - Restart postfix
      tags:
        - add_domain
+       - add_root_and_domain
 
      
    - name: Postfix | Add virtual maps
