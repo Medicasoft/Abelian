@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS users
 (
   id serial NOT NULL,
-  address character varying NOT NULL UNIQUE,
+  address character varying NOT NULL,
   userName character varying,
   domain character varying,
   certificate bytea,
@@ -13,6 +13,11 @@ WITH (
 );
 
 ALTER TABLE users
+    OWNER TO direct;
+
+CREATE UNIQUE INDEX address_lower_index on users (lower(address));
+
+ALTER INDEX address_lower_index
     OWNER TO direct;
 
 -- users trigger on address insert or update

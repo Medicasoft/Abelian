@@ -55,10 +55,10 @@ function getUser(req, res, next) {
     getEntity(req, res, next, 'User');
 }
 function createUser (req, res, next) {
-    executeSql(req, res, next, 'User', 'create',  [req.body.address, req.body.certificate], 201);
+    executeSql(req, res, next, 'User', 'create',  [req.body.address.toLowerCase(), req.body.certificate], 201);
 }
 function updateUser (req, res, next) {
-    executeSql(req, res, next, 'User', 'update', [req.params.id, req.body.address, req.body.certificate], 200);
+    executeSql(req, res, next, 'User', 'update', [req.params.id, req.body.address.toLowerCase(), req.body.certificate], 200);
 }
 function deleteUser (req, res, next) {
     executeSql(req, res, next, 'User', 'delete', [req.params.id], 204);
@@ -207,7 +207,7 @@ function executeSql(req, res, next, type, queryType, params, successCode) {
             client.query(qry, params, function (err, result) {
                 done();
                 if (err) {
-                    if(err.code === '23505' && type.toLowerCase() === 'user' && err.message.indexOf('users_address_key') !== -1) {
+                    if(err.code === '23505' && type.toLowerCase() === 'user' && err.message.indexOf('address_lower_index') !== -1) {
                         var outcome = {
                             resourceType: "OperationOutcome",
                             issue: [{
