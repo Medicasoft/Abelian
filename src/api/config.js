@@ -25,5 +25,7 @@ module.exports = {
     baseUrl: baseUrl,
 
     //paging for resource search 
-    pageSize: 10
+    pageSize: 10,
+    //maximum time allowed for message processing (in seconds); after this, processing is considered to have failed and the message is available again
+    maxMessageProcessingTime: 60
 };

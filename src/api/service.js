@@ -51,13 +51,13 @@ bundle.registerRoutes(server);
 server.listen(port, function() {
 	console.log('%s listening at %s', server.name, server.url);
 });
-	
+
 function getMessage(req, res, next) {
 	if(req.query.type && ['msg', 'original'].indexOf(req.query.type) === -1) {
 		res.send(400, 'Type parameter expects a value from list: msg, original.');
 		return next(false);
 	}
-	pg.connect(connString, function(err, client, done) {  
+	pg.connect(connString, function(err, client, done) {
 		if(err) {
 			console.error('error fetching client from pool', err);
 			res.send(500);
@@ -89,11 +89,111 @@ function getMessage(req, res, next) {
 }
 
 function getMessages(req, res, next) {
-    resources.getEntities(req, res, next, 'Message');
+	req.query.lock = req.query.lock === 'true' ? true : req.query.lock;
+	if(!req.query.lock) {
+		resources.getEntities(req, res, next, 'Message');
+	} else {
+		getNextMessages(req, res, next);
+    }
 }
 
-//function getMessages(req, res, next) {   
-//	pg.connect(connString, function(err, client, done) {  
+function getNextMessages(req, res, next) {
+	var data = {
+		log : req.log
+	};
+	var connect = function(data, callback) {
+		pg.connect(connString, function(err, client, done) {
+			data.client = client;
+			data.done = done;
+			if(err) {
+				callback(err);
+			} else {
+				callback(null, data);
+			}
+		});
+	};
+
+	var beginTransaction = function(data, callback) {
+		console.log('Begin transaction');
+		data.client.query('BEGIN', function(err, result) {
+			if(err) {
+				console.log('Error beginning transaction');
+				return callback(err, data);
+			}
+			return callback(null, data);
+		});
+	};
+
+	var queryNextMessages = function(data, callback) {
+		var size = (req.params._count !== undefined ? req.params._count : config.pageSize) || 0;
+
+		var meta = resources.message;
+	    data.client.query(meta.queries.get_and_lock_next_messages, [ size, req.params.domain ], function (err, result) {
+	        data.done();
+	        if (err) {
+	        	return callback(err, data);
+	        }
+
+	        var entities = {
+                entry: []
+            };
+
+	        for (var i = 0; i < result.rows.length; i++) {
+                var row = result.rows[i].get_and_lock_next_messages.replace(/(^\()|(\)$)/, '').split(','); //remove parantheses and split by comma
+                // console.log(row);
+                var entity = {
+                	id : row[0],
+                	content : {
+                		recipient : row[1],
+                		sender : row[2],
+                		guid : row[3]
+                	}
+                };
+                entities.entry.push({
+                    id: entity.id,
+                    content: entity.content
+                });
+            }
+            entities.totalResults = entities.entry.length;
+            data.entities = entities;
+            callback(null, data);
+	    });
+	};
+
+	function commitTransaction(data, callback) {
+		console.log('Commit transaction');
+		data.client.query('COMMIT', function(err, result) {
+			if(err) {
+				console.log('Error commiting transaction');
+				return callback(err, data);
+			}
+			callback(null, data);
+		});
+	}
+
+
+	async.waterfall([
+		function(cb) {
+			cb(null, data);
+		},
+		connect,
+		beginTransaction,
+		queryNextMessages,
+		commitTransaction
+	], function(err, data) {
+		if(err) {
+            console.error('error running query', err);
+            res.send(500);
+            return next(false);
+        }
+
+        res.send(200, data.entities);
+        next();
+	});
+}
+
+//function getMessages(req, res, next) {
+//	pg.connect(connString, function(err, client, done) {
 //		if(err) {
 //			console.error('error fetching client from pool', err);
 //			res.send(500);
@@ -140,13 +240,13 @@ function sendMessage(req, res, next) {
 		},
 		saveMessage
 	], function(err, result) {
-		if(err === null) {	 
-            console.log('smimesend.py successfully sent a message');        
+		if(err === null) {
+            console.log('smimesend.py successfully sent a message');
 			res.send(200);
 			return;
 		}
-        console.error('smimesend.py error:' + err);   
-        
+        console.error('smimesend.py error:' + err);
+
 		if(err.code === 2) {
 			res.send(400, 'Mail headers missing');
 			return;
@@ -155,8 +255,8 @@ function sendMessage(req, res, next) {
 			res.send(422, err.message);
 			return;
 		}
-		
-		res.send(500, err);		
+
+		res.send(500, err);
 	});
 }
 
@@ -177,7 +277,7 @@ function saveMessage(req, callback) {
 	    }
             err.message = relevantErrMsg;
 	}
-       
+
 	callback(err);
 	});
     child.stdin.write(req.body);
@@ -186,7 +286,7 @@ function saveMessage(req, callback) {
 
 
 function deleteMessage(req, res, next) {
-	pg.connect(connString, function(err, client, done) {  
+	pg.connect(connString, function(err, client, done) {
 		if(err) {
 			console.error('error fetching client from pool', err);
 			res.send(500);

@@ -105,7 +105,7 @@ def save_message(queue_id, recipient, sender, msg_orig, msg_plain):
     cur = conn.cursor();
     tokens = recipient.split("@");
     domain = tokens[1] if len(tokens) > 1 else None
-    cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg,domain) VALUES(%s,%s,%s,%s,%s,%s);",(queue_id,recipient,sender,msg_orig,msg_plain,domain))
+    cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg,domain,guid) VALUES(%s,%s,%s,%s,%s,%s,%s);",(queue_id,recipient,sender,msg_orig,msg_plain,domain,uuid_generate_v4()))
     conn.commit()
 
 def send_mdn(sender, recipient, orig_message_id, subject, msg_plain):

@@ -46,8 +46,10 @@ DROP TRIGGER IF EXISTS userAddressTrigger on users;
 CREATE TRIGGER userAddressTrigger AFTER INSERT OR UPDATE OF address ON users
 FOR EACH ROW EXECUTE PROCEDURE setUserDetails();
   
-    
-  
+
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS messages
 (
   id serial NOT NULL,
@@ -57,6 +59,8 @@ CREATE TABLE IF NOT EXISTS messages
   recipient character varying,
   sender character varying,
   domain character varying,
+  guid uuid,
+  processing_started timestamp,
   CONSTRAINT id PRIMARY KEY (id)
 )
 WITH (
@@ -66,7 +70,33 @@ WITH (
 ALTER TABLE messages
     OWNER TO direct;
 
-    
+
+CREATE OR REPLACE FUNCTION get_and_lock_next_messages(count integer, message_domain character varying, processingExpiryAge integer)
+  RETURNS table(id integer, recipient character varying, sender character varying, guid uuid) AS
+$BODY$
+
+BEGIN
+  --reset expired processing timestamps
+  UPDATE messages m SET processing_started = null WHERE m.domain = message_domain and age(LOCALTIMESTAMP, processing_started) > processingExpiryAge * interval '1 second';
+
+  --get unallocated messages and set processing timestamp
+  return query
+    with ids as (
+      select m.id FROM messages m WHERE m.domain = message_domain and processing_started is null ORDER BY m.id LIMIT count
+    ),
+    updated as (
+        update messages m SET processing_started = LOCALTIMESTAMP WHERE m.id in (select * from ids) returning  m.id, m.recipient, m.sender, m.guid
+    )
+    select *
+    from updated
+    ORDER BY id;  
+END
+$BODY$
+LANGUAGE plpgsql;
+
+
+
+
 CREATE TABLE IF NOT EXISTS domains
 (
   id serial NOT NULL,
