@@ -61,7 +61,6 @@ FOR EACH ROW EXECUTE PROCEDURE setUserDetails();
   
 
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
   
 CREATE TABLE IF NOT EXISTS messages
 (
