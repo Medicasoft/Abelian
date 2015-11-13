@@ -115,7 +115,8 @@ function messageToJson(row) {
         id: baseUrl + 'Message/' + row.id,
         content: {
             to: row.recipient,
-            sender: row.sender
+            sender: row.sender,
+            guid : row.guid
         }
     };
 }

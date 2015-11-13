@@ -42,6 +42,7 @@ server.use(restify.CORS({ origins : ['*'], headers : ['location']}));
 //routes
 server.get('/Message/:id', getMessage);
 server.get('/Messages', getMessages);
+server.post('/Messages', getNextMessages);
 server.post('/Message', restify.bodyParser(), sendMessage);
 server.del('/Message/:id', deleteMessage);
 user.registerRoutes(server);
@@ -89,151 +90,129 @@ function getMessage(req, res, next) {
 }
 
 function getMessages(req, res, next) {
-	req.query.lock = req.query.lock === 'true' ? true : req.query.lock;
-	if(!req.query.lock) {
-		resources.getEntities(req, res, next, 'Message');
-	} else {
-		getNextMessages(req, res, next);
-    }
+	resources.getEntities(req, res, next, 'Message');
 }
 
 function getNextMessages(req, res, next) {
-	var data = {
-		log : req.log
-	};
-	var connect = function(data, callback) {
-		pg.connect(connString, function(err, client, done) {
-			data.client = client;
-			data.done = done;
-			if(err) {
-				callback(err);
-			} else {
-				callback(null, data);
-			}
-		});
-	};
-
-	var beginTransaction = function(data, callback) {
-		console.log('Begin transaction');
-		data.client.query('BEGIN', function(err, result) {
-			if(err) {
-				console.log('Error beginning transaction');
-				return callback(err, data);
-			}
-			return callback(null, data);
-		});
-	};
-
-	var queryNextMessages = function(data, callback) {
-		var size = (req.params._count !== undefined ? req.params._count : config.pageSize) || 0;
-
-		var meta = resources.message;
-	    data.client.query(meta.queries.get_and_lock_next_messages, [ size, req.params.domain ], function (err, result) {
-	        data.done();
-	        if (err) {
-	        	return callback(err, data);
-	        }
-
-	        var entities = {
-                entry: []
-            };
-
-	        for (var i = 0; i < result.rows.length; i++) {
-                var row = result.rows[i].get_and_lock_next_messages.replace(/(^\()|(\)$)/, '').split(','); //remove parantheses and split by comma
-                // console.log(row);
-                var entity = {
-                	id : row[0],
-                	content : {
-                		recipient : row[1],
-                		sender : row[2],
-                		guid : row[3]
-                	}
-                };
-                entities.entry.push({
-                    id: entity.id,
-                    content: entity.content
-                });
-            }
-            entities.totalResults = entities.entry.length;
-            data.entities = entities;
-            callback(null, data);
-	    });
-	};
-
-	function commitTransaction(data, callback) {
-		console.log('Commit transaction');
-		data.client.query('COMMIT', function(err, result) {
-			if(err) {
-				console.log('Error commiting transaction');
-				return callback(err, data);
-			}
-			callback(null, data);
-		});
+	req.query.lock = req.query.lock === 'true' || req.query.lock === true;
+	if(!req.query.lock) {
+		resources.getEntities(req, res, next, 'Message');
+		return;
 	}
 
+	//get and lock next messages to process
+	var options = {
+		log : req.log,
+		message_domains : [ req.params.domain ],
+		size : req.params._count
+	};
 
-	async.waterfall([
-		function(cb) {
-			cb(null, data);
-		},
-		connect,
-		beginTransaction,
-		queryNextMessages,
-		commitTransaction
-	], function(err, data) {
+	var afterFn = function(err, response) {
 		if(err) {
             console.error('error running query', err);
             res.send(500);
             return next(false);
         }
 
-        res.send(200, data.entities);
+        res.send(200, response);
         next();
+	};
+
+	getNextMessagesDb(options, afterFn);
+}
+
+function getNextMessagesDb(options, callback) {
+	async.waterfall([
+		function(cb) {
+			cb(null, options);
+		},
+		connect,
+		beginTransaction,
+		queryNextMessages,
+		commitTransaction
+	], function(err, data) {
+		callback(err, data.entities);
 	});
 }
 
-//function getMessages(req, res, next) {
-//	pg.connect(connString, function(err, client, done) {
-//		if(err) {
-//			console.error('error fetching client from pool', err);
-//			res.send(500);
-//			return next();
-//		} else {
-//		    client.query(get_messages_qry, function (err, result) {
-//		        done();
-//		        if (err) {
-//		            console.error('error running query', err);
-//		            res.send(500);
-//		            return next();
-//		        }
 
-//		        var count = result.rows.length;
-//		        var msgs = {
-//		            totalResults: count,
-//		            entry: []
-//		        };
+function connect(data, callback) {
+	pg.connect(connString, function(err, client, done) {
+		data.client = client;
+		data.done = done;
+		if(err) {
+			callback(err);
+		} else {
+			callback(null, data);
+		}
+	});
+}
 
-//		        for (var i = 0; i < count; i++) {
-//		            var row = result.rows[i];
-//		            var message = {
-//		                id: baseUrl + 'Message/' + row.id, //full GET url
-//		                to: row.recipient //,
-//		                //size : row.messagesize,
-//		                //status : row.status
-//		            };
-//		            msgs.entry.push(message);
-//		        }
-//		        res.send(200, msgs);
-//		    });
-//		}
-//	});
-//}
+function beginTransaction(data, callback) {
+	// console.log('Begin transaction');
+	data.client.query('BEGIN', function(err, result) {
+		if(err) {
+			console.log('Error beginning transaction');
+			return callback(err, data);
+		}
+		return callback(null, data);
+	});
+}
+
+var queryNextMessages = function(data, callback) {
+	var size = (data.size !== undefined ? data.size : config.pageSize) || 0;
+	var message_domains = util.format('{%s}', data.message_domains.join(','));
+
+	var meta = resources.message;
+    data.client.query(meta.queries.get_and_lock_next_messages, [ size, message_domains ], function (err, result) {
+        data.done();
+        if (err) {
+        	return callback(err, data);
+        }
+
+        var entities = {
+        	totalResults : result.rows.length,
+            entry: []
+        };
+
+        for (var i = 0; i < result.rows.length; i++) {
+            var row = result.rows[i].get_and_lock_next_messages.replace(/(^\()|(\)$)/, '').split(','); //remove parantheses and split by comma
+            var entity = {
+            	id : row[0],
+            	content : {
+            		to : row[1],
+            		sender : row[2],
+            		guid : row[3]
+            	}
+            };
+            entities.entry.push({
+                id: entity.id,
+                content: entity.content
+            });
+        }
+
+        data.entities = entities;
+        callback(null, data);
+    });
+};
+
+function commitTransaction(data, callback) {
+	// console.log('Commit transaction');
+	data.client.query('COMMIT', function(err, result) {
+		if(err) {
+			console.error('Error commiting transaction');
+			return callback(err, data);
+		}
+		callback(null, data);
+	});
+}
+
 
 function sendMessage(req, res, next) {
     if(req.body === undefined) {
         res.send(400, 'Invalid content-type');
         return next();
-    };
+    }
 	async.waterfall([
 		function(callback) {
 			callback(null, req);

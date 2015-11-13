@@ -84,18 +84,18 @@ ALTER TABLE messages
     OWNER TO direct;
 
 
-CREATE OR REPLACE FUNCTION get_and_lock_next_messages(count integer, message_domain character varying, processingExpiryAge integer)
+CREATE OR REPLACE FUNCTION get_and_lock_next_messages(count integer, message_domains character varying[], processingExpiryAge integer)
   RETURNS table(id integer, recipient character varying, sender character varying, guid uuid) AS
 $BODY$
 
 BEGIN
   --reset expired processing timestamps
-  UPDATE messages m SET processing_started = null WHERE m.domain = message_domain and age(LOCALTIMESTAMP, processing_started) > processingExpiryAge * interval '1 second';
+  UPDATE messages m SET processing_started = null WHERE m.domain = any(message_domains) and age(LOCALTIMESTAMP, processing_started) > processingExpiryAge * interval '1 second';
 
   --get unallocated messages and set processing timestamp
   return query
     with ids as (
-      select m.id FROM messages m WHERE m.domain = message_domain and processing_started is null ORDER BY m.id LIMIT count
+      select m.id FROM messages m WHERE m.domain = any(message_domains) and processing_started is null ORDER BY m.id LIMIT count
     ),
     updated as (
         update messages m SET processing_started = LOCALTIMESTAMP WHERE m.id in (select * from ids) returning  m.id, m.recipient, m.sender, m.guid
