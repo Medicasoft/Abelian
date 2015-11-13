@@ -71,11 +71,22 @@ ALTER TABLE messages
     OWNER TO direct;
 
 
-CREATE OR REPLACE FUNCTION get_and_lock_next_messages(count integer, message_domains character varying[], processingExpiryAge integer)
+CREATE OR REPLACE FUNCTION get_and_lock_next_messages(count integer, message_domains character varying[], lock_message boolean, processingExpiryAge integer)
   RETURNS table(id integer, recipient character varying, sender character varying, guid uuid) AS
 $BODY$
-
 BEGIN
+  if not lock_message then
+    return query
+      select m.id, m.recipient, m.sender, m.guid
+      FROM messages m
+      WHERE m.domain = any(message_domains)
+      and (processing_started is null or
+           age(LOCALTIMESTAMP, processing_started) > processingExpiryAge * interval '1 second')
+      ORDER BY m.id
+      LIMIT count;
+    return;
+  end if;
+
   --reset expired processing timestamps
   UPDATE messages m SET processing_started = null WHERE m.domain = any(message_domains) and age(LOCALTIMESTAMP, processing_started) > processingExpiryAge * interval '1 second';
 
@@ -89,7 +100,7 @@ BEGIN
     )
     select *
     from updated
-    ORDER BY id;  
+    ORDER BY id;
 END
 $BODY$
 LANGUAGE plpgsql;

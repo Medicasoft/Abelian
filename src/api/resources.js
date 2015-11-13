@@ -58,7 +58,7 @@ var resources = {
     },
     message: {
         queries: {
-            get_and_lock_next_messages: 'select get_and_lock_next_messages($1, $2, ' + config.maxMessageProcessingTime + ');',
+            get_and_lock_next_messages: 'select get_and_lock_next_messages($1, $2, $3, ' + config.maxMessageProcessingTime + ');', //size, message_domains, lock, maxMessageProcessingTime
             list: 'SELECT id, recipient, sender, guid FROM messages %s ORDER BY id LIMIT $1 OFFSET $2;',
             count: 'SELECT count(*) from messages %s;',
             delete: 'DELETE FROM messages WHERE id = $1;'
