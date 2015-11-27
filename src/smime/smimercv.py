@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import sys, os, subprocess, email, psycopg2, logging, smimesend
+import sys, os, subprocess, email, psycopg2, logging, smimesend, uuid
 from email.parser import Parser
 from M2Crypto import BIO, SMIME, X509
 
@@ -105,7 +105,10 @@ def save_message(queue_id, recipient, sender, msg_orig, msg_plain):
     cur = conn.cursor();
     tokens = recipient.split("@");
     domain = tokens[1] if len(tokens) > 1 else None
-    cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg,domain) VALUES(%s,%s,%s,%s,%s,%s);",(queue_id,recipient,sender,msg_orig,msg_plain,domain))
+    guid = str(uuid.uuid4())
+    cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg,domain,guid) VALUES(%s,%s,%s,%s,%s,%s,%s);",(queue_id,recipient,sender,msg_orig,msg_plain,domain,guid))
+    logging.debug('Inserted new mail with guid ' + guid);
+
     conn.commit()
 
 def send_mdn(sender, recipient, orig_message_id, subject, msg_plain):

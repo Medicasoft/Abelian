@@ -58,7 +58,8 @@ var resources = {
     },
     message: {
         queries: {
-            list: 'SELECT id, recipient, sender FROM messages %s ORDER BY id LIMIT $1 OFFSET $2;',
+            get_and_lock_next_messages: 'select get_and_lock_next_messages($1, $2, $3, ' + config.maxMessageProcessingTime + ');', //size, message_domains, lock, maxMessageProcessingTime
+            list: 'SELECT id, recipient, sender, guid FROM messages %s ORDER BY id LIMIT $1 OFFSET $2;',
             count: 'SELECT count(*) from messages %s;',
             delete: 'DELETE FROM messages WHERE id = $1;'
         },
@@ -114,7 +115,8 @@ function messageToJson(row) {
         id: baseUrl + 'Message/' + row.id,
         content: {
             to: row.recipient,
-            sender: row.sender
+            sender: row.sender,
+            guid : row.guid
         }
     };
 }
@@ -192,10 +194,12 @@ function getEntities(req, res, next, type) {
                 var limit = 'ALL';
                 var offset = 0;
 
-                if (config.pageSize) {
-                    limit = config.pageSize;
+                var size = (req.query._count !== undefined ? req.query._count : config.pageSize) || 0;
+
+                if (size) {
+                    limit = size;
                     if (page) {
-                        offset = (page - 1) * config.pageSize;
+                        offset = (page - 1) * size;
                     }
                 }
                 if (offset && offset >= totalResults) {
