@@ -117,7 +117,7 @@ END
 $BODY$
 LANGUAGE plpgsql;
 
-
+ALTER FUNCTION get_and_lock_next_messages(count integer, message_domains character varying[], lock_message boolean, processingExpiryAge integer) OWNER TO direct;
 
 CREATE TABLE IF NOT EXISTS domains
 (

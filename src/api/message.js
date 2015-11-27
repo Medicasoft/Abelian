@@ -167,7 +167,8 @@ var queryNextMessages = function(data, callback) {
         };
 
         for (var i = 0; i < result.rows.length; i++) {
-            var row = result.rows[i].get_and_lock_next_messages.replace(/(^\()|(\)$)/, '').split(','); //remove parantheses and split by comma
+            var str = result.rows[i].get_and_lock_next_messages;
+            var row = str.substring(1, str.length - 1).split(','); //remove parantheses and split by comma
             var entity = {
                 id : row[0],
                 content : {
