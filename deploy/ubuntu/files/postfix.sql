@@ -105,7 +105,7 @@ BEGIN
   --get unallocated messages and set processing timestamp
   return query
     with ids as (
-      select m.id FROM messages m WHERE m.domain = any(message_domains) and processing_started is null ORDER BY m.id LIMIT count
+      select m.id FROM messages m WHERE m.domain = any(message_domains) and processing_started is null ORDER BY m.id LIMIT count for update
     ),
     updated as (
         update messages m SET processing_started = LOCALTIMESTAMP WHERE m.id in (select * from ids) returning  m.id, m.recipient, m.sender, m.guid
