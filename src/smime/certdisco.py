@@ -27,7 +27,7 @@ def dns_cert(addr):
     try:
         answer = dns.resolver.query(addr, 'CERT')
         for rdata in answer:
-            if rdata.algorithm != 5: #RSASHA1
+            if (rdata.algorithm != 5) and (rdata.algorithm != 8): #RSASHA1 or RSASHA256
                 logging.warning('Invalid CERT algorithm: %d: %s', rdata.algorithm, addr)
                 continue
             if rdata.certificate_type == 1: #PKIX
