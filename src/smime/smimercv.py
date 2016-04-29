@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import sys, os, subprocess, email, psycopg2, logging, smimesend, uuid
+import sys, os, subprocess, email, psycopg2, logging, smimesend, uuid, config
 from email.parser import Parser
 from M2Crypto import BIO, SMIME, X509
 
@@ -111,10 +111,10 @@ def save_message(queue_id, recipient, sender, msg_orig, msg_plain):
 
     conn.commit()
 
-def send_mdn(sender, recipient, orig_message_id, subject, msg_plain):
+def send_mdn(sender, recipient, orig_message_id, subject, msg_plain, disposition_type):
     import mdn
 
-    msg_id, mdn_msg = mdn.make_mdn(sender, recipient, orig_message_id, subject)   
+    msg_id, mdn_msg = mdn.make_mdn(sender, recipient, orig_message_id, subject, disposition_type)   
     return smimesend.send_message(sender, recipient, msg_id, mdn_msg)
 
 def verify_sig_cert(sig, sender, local_domain):
@@ -157,9 +157,15 @@ if __name__ == "__main__":
     subject = retval[3]
 
     if not is_mdn: #not MDN
-        mdn_rc = send_mdn(recip, sender, message_id, subject, plain)
+        mdn_rc = send_mdn(recip, sender, message_id, subject, plain, 'processed')
         if mdn_rc != 0:
-            logging.warning('MDN send failed with code: %s', mdn_rc)
+            logging.warning('Processed MDN send failed with code: %s', mdn_rc)
             exit(mdn_rc)
 
     save_message(queue_id, recip, sender, orig, plain)
+
+    if not is_mdn and config.send_dispatched_mdn: #not MDN
+        mdn_rc = send_mdn(recip, sender, message_id, subject, plain, 'dispatched')
+        if mdn_rc != 0:
+            logging.warning('Dispatched MDN send failed with code: %s', mdn_rc)
+            exit(mdn_rc)
