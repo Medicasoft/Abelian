@@ -56,5 +56,9 @@ def make_mdn(sender, recipient, orig_message_id, subject, disposition_type):
     else:
         dn.set_payload(NOTIFICATION_DISPATCHED % (sender,orig_message_id))
     msg.attach(dn)
+    msg_string = msg.as_string()
+    msg_string = msg_string.replace('\r\n', '\n')
+    msg_string = msg_string.replace('\n', '\r\n')
 
-    return msg_id, msg.as_string()
+    return msg_id, msg_string
+
