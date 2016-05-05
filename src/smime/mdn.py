@@ -18,10 +18,10 @@ from email.message import Message
 import email.utils, time, random
 
 NOTIFICATION_PROCESSED = """
-Reporting-UA: ; Abelian\r\nFinal-Recipient: rfc822;%s\r\nOriginal-Message-ID: %s\r\nDisposition: automatic-action/MDN-sent-automatically;processed
+Reporting-UA: %s; Abelian\r\nFinal-Recipient: rfc822;%s\r\nOriginal-Message-ID: %s\r\nDisposition: automatic-action/MDN-sent-automatically;processed
 """
 NOTIFICATION_DISPATCHED = """
-Reporting-UA: ; Abelian\r\nFinal-Recipient: rfc822;%s\r\nOriginal-Message-ID: %s\r\nX-DIRECT-FINAL-DESTINATION-DELIVERY: \r\nDisposition: automatic-action/MDN-sent-automatically;dispatched
+Reporting-UA: %s; Abelian\r\nFinal-Recipient: rfc822;%s\r\nOriginal-Message-ID: %s\r\nX-DIRECT-FINAL-DESTINATION-DELIVERY: \r\nDisposition: automatic-action/MDN-sent-automatically;dispatched
 """
 
 
@@ -30,7 +30,7 @@ def make_mdn(sender, recipient, orig_message_id, subject, disposition_type):
 
     msg = Message()
     msg['MIME-Version'] = '1.0'
-    msg['content-type'] = 'multipart/report; report-type=disposition-notification'
+    msg['Content-Type'] = 'multipart/report; report-type=disposition-notification'
     msg['From'] = '<%s>' % sender
     msg['To'] = '<%s>' % recipient
     msg['Date'] = email.utils.formatdate()
@@ -42,6 +42,8 @@ def make_mdn(sender, recipient, orig_message_id, subject, disposition_type):
         msg['Subject'] = 'Delivered: %s' % subject
 
     txt = Message()
+    txt['Content-Type'] = 'text/plain;charset=us-ascii'
+    txt['Content-Transfer-Encoding'] = '7bit'
     if (disposition_type == 'processed'):
         txt.set_payload('Your message was successfully processed.')
     else:
@@ -52,13 +54,14 @@ def make_mdn(sender, recipient, orig_message_id, subject, disposition_type):
     dn['Content-Type'] = 'message/disposition-notification'
     dn['Content-Transfer-Encoding'] = '7bit'
     if (disposition_type == 'processed'):
-        dn.set_payload(NOTIFICATION_PROCESSED % (sender,orig_message_id))
+        dn.set_payload(NOTIFICATION_PROCESSED % (sender.split('@',1)[1],sender,orig_message_id))
     else:
-        dn.set_payload(NOTIFICATION_DISPATCHED % (sender,orig_message_id))
+        dn.set_payload(NOTIFICATION_DISPATCHED % (sender.split('@',1)[1],sender,orig_message_id))
     msg.attach(dn)
     msg_string = msg.as_string()
     msg_string = msg_string.replace('\r\n', '\n')
+    msg_string = msg_string.replace('\n\n\n', '\n\n')
     msg_string = msg_string.replace('\n', '\r\n')
+    msg_string = msg_string + '\r\n'
 
     return msg_id, msg_string
-
