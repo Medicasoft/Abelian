@@ -59,6 +59,7 @@ def process_message(queue_id, recipient, sender, message):
         subject = mail['subject']
     is_mdn = False
     sig = None
+    dispatch_mdn_request = False
     for mpart in mail.walk():
         if (message_id == None) and (mpart['message-id'] != None):
             message_id = mail['message-id']
@@ -67,6 +68,13 @@ def process_message(queue_id, recipient, sender, message):
         ct = mpart.get_content_type()
         if ct == 'message/disposition-notification':
             is_mdn = True
+        else:
+            disposition_options = mpart['disposition-notification-options']
+            if disposition_options != None:
+                disposition_options = disposition_options.lower()
+                disposition_options = disposition_options.replace(' ', '')
+                if disposition_options == 'x-direct-final-destination-delivery=optional,true':
+                    dispatch_mdn_request = True
         if ct == 'application/pkcs7-signature':
             sig = mpart.get_payload()
             #openssl needs short base64 encoded lines
@@ -98,7 +106,7 @@ def process_message(queue_id, recipient, sender, message):
         logging.debug('Mail signature validation failed')
         return None
 
-    return (stdout, is_mdn, message_id, subject)
+    return (stdout, is_mdn, message_id, subject, dispatch_mdn_request)
 
 def save_message(queue_id, recipient, sender, msg_orig, msg_plain):
     conn = psycopg2.connect(database='maildb', user='direct')
@@ -155,6 +163,8 @@ if __name__ == "__main__":
     is_mdn = retval[1]
     message_id = retval[2]
     subject = retval[3]
+    dispatch_mdn_request = retval[4]
+
 
     if not is_mdn: #not MDN
         mdn_rc = send_mdn(recip, sender, message_id, subject, plain, 'processed')
@@ -164,7 +174,7 @@ if __name__ == "__main__":
 
     save_message(queue_id, recip, sender, orig, plain)
 
-    if not is_mdn and config.send_dispatched_mdn: #not MDN
+    if not is_mdn and config.send_dispatched_mdn and dispatch_mdn_request: #not MDN
         mdn_rc = send_mdn(recip, sender, message_id, subject, plain, 'dispatched')
         if mdn_rc != 0:
             logging.warning('Dispatched MDN send failed with code: %s', mdn_rc)
