@@ -78,10 +78,14 @@ def ldap_qry(uri, mail):
     try:
         logging.debug('Querying LDAP uri: ' + uri)
         l = ldap.initialize(uri)
-        res = l.search_s('', ldap.SCOPE_SUBTREE, '(mail={0})'.format(mail), ['userCertificate'])
+        res = l.search_s('', ldap.SCOPE_SUBTREE, '(mail={0})'.format(mail), ['userCertificate', 'userCertificate;binary'])
         for dn, uc in res:
-            logging.debug('Received LDAP user certificate')
-            certs.extend(uc['userCertificate'])
+			if 'userCertificate' in uc:				
+				logging.debug('Received LDAP user certificate')
+				certs.extend(uc['userCertificate'])
+			else:
+				logging.debug('Received LDAP user certificate (binary)')
+				certs.extend(uc['userCertificate;binary'])				
     except ldap.LDAPError as x:
         logging.warning('LDAP query failed: %s: %s', x, mail)
     return certs
