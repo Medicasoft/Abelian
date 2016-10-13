@@ -76,16 +76,20 @@ def dns_srv(addr):
 def ldap_qry(uri, mail):
     certs = []
     try:
-        logging.debug('Querying LDAP uri: ' + uri)
+        logging.debug('Binding LDAP uri: ' + uri)
         l = ldap.initialize(uri)
-        res = l.search_s('', ldap.SCOPE_SUBTREE, '(mail={0})'.format(mail), ['userCertificate', 'userCertificate;binary'])
-        for dn, uc in res:
-			if 'userCertificate' in uc:				
-				logging.debug('Received LDAP user certificate')
-				certs.extend(uc['userCertificate'])
-			else:
-				logging.debug('Received LDAP user certificate (binary)')
-				certs.extend(uc['userCertificate;binary'])				
+        logging.debug('Resolve Base DNs')
+        nc = l.search_s('', ldap.SCOPE_BASE, '(objectclass=*)', ['namingContexts'])
+        for dn, attr in nc:
+            logging.debug('Querying base dn: ' + attr['namingContexts'][0])
+            res = l.search_s(attr['namingContexts'][0], ldap.SCOPE_SUBTREE, '(mail={0})'.format(mail), ['userCertificate', 'userCertificate;binary'])
+            for dn, uc in res:
+    			if 'userCertificate' in uc:
+    				logging.debug('Received LDAP user certificate')
+    				certs.extend(uc['userCertificate'])
+    			else:
+    				logging.debug('Received LDAP user certificate (binary)')
+    				certs.extend(uc['userCertificate;binary'])
     except ldap.LDAPError as x:
         logging.warning('LDAP query failed: %s: %s', x, mail)
     return certs
