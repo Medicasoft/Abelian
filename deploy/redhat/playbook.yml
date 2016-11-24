@@ -21,7 +21,10 @@
     - include: tasks/prereqs.yml
     - include: tasks/postgres.yml
       when: ALL_IN_ONE == False
-    - include: tasks/certificates.yml tags=add_domain,add_root_and_domain
+    - include: tasks/certificates.yml
+      tags:
+        - add_domain
+        - add_root_and_domain
     - include: tasks/pdns.yml
     - include: tasks/pyscripts.yml
     - include: tasks/postfix.yml
