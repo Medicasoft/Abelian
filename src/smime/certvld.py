@@ -48,13 +48,13 @@ def verify_binding(x509, addr, domain, addressBound):
             if len(subjAltName) != 2:
                 logging.log('Certificate binding verification failed: invalid subjectAltName')
                 return False
-            if subjAltName[0].lower() == 'dns' and subjAltName[1].lower() == domain:
+            if subjAltName[0].lower() == 'dns' and subjAltName[1].lower() == domain.lower():
                 logging.debug('Certificate binding verification: OK')
                 return True
-            if subjAltName[0].lower() != 'email' or subjAltName[1].lower() != addr:
+            if subjAltName[0].lower() != 'email' or subjAltName[1].lower() != addr.lower():
                 logging.debug('Certificate binding verification failed %s: emailAddress does not match', emailAddress)
                 return False
-        if emailAddress != None and emailAddress.lower() != addr:
+        if emailAddress != None and emailAddress.lower() != addr.lower():
             logging.debug('Certificate binding verification failed %s: subjectAltName does not match', emailAddress)
             return False
         if subjAltName != None and emailAddress != None and subjAltName[1].lower() != emailAddress.lower():

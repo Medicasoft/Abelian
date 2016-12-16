@@ -33,6 +33,7 @@ TEMPLATE = """
 def process_message(queue_id, recipient, sender, message):
     pid = os.getpid()
 
+    recipient = recipient.lower()
     recipient_domain = recipient.partition('@')[2]
     ca_path = os.path.join(CADIR, 'trust', recipient_domain)
 
@@ -52,7 +53,7 @@ def process_message(queue_id, recipient, sender, message):
     proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     proc.stdin.write(message)
     msg_sign, stderr = proc.communicate()
-    
+
     mail = Parser().parsestr(msg_sign)
 
     if (subject == None) and (mail['subject'] != None):

@@ -31,7 +31,7 @@ def find_certificate(addr, local_domain, algo):
     parts = addr.partition('@')
     user = parts[0]
     domain = parts[2]
-      
+
     if algo == 1 or algo == 0:
         logging.debug('Trying address bound DNS CERT')
         certs = certdisco.dns_cert(user + '.' + domain)
@@ -93,6 +93,7 @@ def send_message(sender, recipient, message_id, message):
     import certdisco, certvld, crypto, subprocess, os
 
     logging.debug('Start sending message to: %s', recipient)
+    recipient = recipient.lower()
     domain = recipient.partition('@')[2]
     sender_domain = sender.partition('@')[2]
 
@@ -112,7 +113,7 @@ def send_message(sender, recipient, message_id, message):
 
     from_key = os.path.join(CADIR, 'key', sender_domain, 'direct.key') #EVP.load_key('direct.key', util.passphrase_callback)
     from_cert = os.path.join(CADIR, 'cert', sender_domain, 'direct.pem') #X509.load_cert('direct.pem')
-    
+
     algo = 0 if dom == None else dom[3]
 
     logging.debug('Certificate discovery algorithm: %s', algo)
@@ -192,4 +193,4 @@ if __name__ == "__main__":
         retval = '[smime_errors] Could not send DIRECT mail to the following recipient(s): ' + retval
     	exit(retval)
     exit()
-	
+
