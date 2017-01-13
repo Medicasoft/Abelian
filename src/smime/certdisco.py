@@ -27,7 +27,7 @@ def dns_cert(addr):
     try:
         answer = dns.resolver.query(addr, 'CERT')
         for rdata in answer:
-            if (rdata.algorithm != 5) and (rdata.algorithm != 8): #RSASHA1 or RSASHA256
+            if (rdata.algorithm != 5) and (rdata.algorithm != 8) and (rdata.algorithm !=0): #RSASHA1 or RSASHA256 and workaround for athenahealth
                 logging.warning('Invalid CERT algorithm: %d: %s', rdata.algorithm, addr)
                 continue
             if rdata.certificate_type == 1: #PKIX
