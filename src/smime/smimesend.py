@@ -146,9 +146,7 @@ def send_message(sender, recipient, message_id, message):
     proc.communicate()
     status = proc.returncode
     if status == 0:
-        logging.debug('Message queued: %s: %s', message_id, recipient)
-    else:
-        logging.warning('Send message failed: %s: %s', message_id, recipient)
+        logging.debug('from=<%s>, to=<%s>, message-id=%s, status=sent', sender, recipient, message_id)
     return status
 
 if __name__ == "__main__":
@@ -157,7 +155,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG,stream=sys.stderr)
     err = logging.handlers.SysLogHandler(address='/dev/log',facility=logging.handlers.SysLogHandler.LOG_MAIL)
     err.setLevel(logging.DEBUG)
-    err.setFormatter(logging.Formatter('%(asctime)s ' + platform.node() + ' direct/send[%(process)s]: %(message)s'))
+    err.setFormatter(logging.Formatter('direct/send[%(process)s]: %(message)s'))
     logging.getLogger('').addHandler(err)
 
     parser = email.Parser.Parser()
@@ -188,7 +186,8 @@ if __name__ == "__main__":
     for recipient in recipients:
         err = send_message(sender, recipient[1], message_id, eml)
         if err != 0:
-            retval += recipient[1] + '; ' 
+            retval += recipient[1] + '; '
+            logging.warning('from=<%s>, to=<%s>, message-id=%s, status=failed', sender, recipient[1], message_id)
     if retval != '':
         retval = '[smime_errors] Could not send DIRECT mail to the following recipient(s): ' + retval
     	exit(retval)
