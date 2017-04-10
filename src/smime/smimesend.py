@@ -15,9 +15,14 @@ limitations under the License.
 """
 
 import email, psycopg2,logging, certdisco, certvld
+from email.parser import Parser
 
 TEMPDIR = '/var/spool/direct/tmp/'
 CADIR = '/var/spool/direct/ca'
+
+
+def format_log_message(sender, recipient, message_id, status, is_mdn):
+    return 'from=<%s>, to=<%s>, message-id=<%s>, status=%s, is-mdn=%s' % (sender, recipient, message_id, status, is_mdn)
 
 def find_certificate(addr, local_domain, algo):
     #algorithms:
@@ -97,11 +102,18 @@ def send_message(sender, recipient, message_id, message):
     domain = recipient.partition('@')[2]
     sender_domain = sender.partition('@')[2]
 
+    msg = Parser().parsestr(message)
+    is_mdn = False
+    for mpart in msg.walk():
+        ct = mpart.get_content_type()
+        if ct == 'message/disposition-notification':
+            is_mdn = True
     try:
         logging.debug('Connecting to "maildb" database')
         conn = psycopg2.connect(database='maildb', user='direct')
     except psycopg2.OperationalError as dberr:
         logging.error('Database connection failed: %s', dberr)
+        logging.error(format_log_message(sender, recipient, message_id, 'failed (Database connection failed)', is_mdn))
         return 1
 
     cur = conn.cursor();
@@ -128,7 +140,7 @@ def send_message(sender, recipient, message_id, message):
         to_cert = find_certificate(recipient, sender_domain, algo)
 
     if to_cert == None:
-        logging.warning('Recipient certificate not found: %s', recipient)
+        logging.warning(format_log_message(sender, recipient, message_id, 'failed (Recipient certificate not found)', is_mdn))
         return 1
 
     logging.debug('Securing message')
@@ -146,7 +158,9 @@ def send_message(sender, recipient, message_id, message):
     proc.communicate()
     status = proc.returncode
     if status == 0:
-        logging.debug('from=<%s>, to=<%s>, message-id=%s, status=sent', sender, recipient, message_id)
+        logging.info(format_log_message(sender, recipient, message_id, 'sent (successful processing)', is_mdn))
+    else:
+        logging.warning(format_log_message(sender, recipient, message_id, 'failed (sendmail error code: %s)' % status, is_mdn))
     return status
 
 if __name__ == "__main__":
@@ -162,23 +176,24 @@ if __name__ == "__main__":
     eml = sys.stdin.read()
     msg = parser.parsestr(eml, True)
     if msg['from'] == None:
-        logging.warning('Invalid message sender')
+        logging.warning(format_log_message(sender, recipient, message_id, 'failed (Invalid message sender)', is_mdn))
         exit(2)
     if msg['to'] == None:
-        logging.warning('Invalid recipient list')
+        logging.warning(format_log_message(sender, recipient, message_id, 'failed (Invalid recipient list)', is_mdn))
         exit(2)
     #if msg['subject'] == None:
     #    logging.warning('Invalid recipient list')
     #    exit(2)
     if msg['message-id'] == None:
-        logging.warning('Invalid message id')
+        logging.warning(format_log_message(sender, recipient, message_id, 'failed (Invalid message id)', is_mdn))
         exit(2)
     if msg['date'] == None:
-        logging.warning('Invalid orig date')
+        logging.warning(format_log_message(sender, recipient, message_id, 'failed (Invalid orig date)', is_mdn))
         exit(2)
 
     sender = email.Utils.parseaddr(msg['from'])[1]
     if sender == '':
+        logging.warning(format_log_message(sender, recipient, message_id, 'failed (Could not parse sender)', is_mdn))
         exit(2)
     recipients = email.Utils.getaddresses(msg.get_all('to',[]) + msg.get_all('cc', []))
     message_id = msg['message-id']
@@ -187,7 +202,6 @@ if __name__ == "__main__":
         err = send_message(sender, recipient[1], message_id, eml)
         if err != 0:
             retval += recipient[1] + '; '
-            logging.warning('from=<%s>, to=<%s>, message-id=%s, status=failed', sender, recipient[1], message_id)
     if retval != '':
         retval = '[smime_errors] Could not send DIRECT mail to the following recipient(s): ' + retval
     	exit(retval)

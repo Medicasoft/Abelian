@@ -157,7 +157,7 @@ if __name__ == "__main__":
     orig = sys.stdin.read()
     retval = process_message(queue_id, recip, sender, orig)
     if retval == None:
-        logging.debug('Message empty')
+        logging.debug('%s: from=<%s>, to=<%s>, status=failed (message empty), is-mdn=N/A', queue_id, sender, recip)
         exit(DATAERR)
 
     plain = retval[0]
@@ -171,6 +171,7 @@ if __name__ == "__main__":
         mdn_rc = send_mdn(recip, sender, message_id, subject, plain, 'processed')
         if mdn_rc != 0:
             logging.warning('Processed MDN send failed with code: %s', mdn_rc)
+            logging.warning('%s: from=<%s>, to=<%s>, status=failed (failed to send processed MDN), is-mdn=%s', queue_id, sender, recip, is_mdn)
             exit(mdn_rc)
 
     save_message(queue_id, recip, sender, orig, plain)
@@ -179,4 +180,7 @@ if __name__ == "__main__":
         mdn_rc = send_mdn(recip, sender, message_id, subject, plain, 'dispatched')
         if mdn_rc != 0:
             logging.warning('Dispatched MDN send failed with code: %s', mdn_rc)
+		    logging.warning('%s: from=<%s>, to=<%s>, message-id=%s, status=failed (failed to send dispatched MDN), is-mdn=%s', queue_id, sender, recip, message_id, is_mdn)
             exit(mdn_rc)
+
+    logging.info('%s: from=<%s>, to=<%s>, message-id=%s, status=received (queued succesfully), is-mdn=%s', queue_id, sender, recip, message_id, is_mdn)
