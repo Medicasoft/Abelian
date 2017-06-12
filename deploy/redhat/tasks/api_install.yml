@@ -15,11 +15,12 @@
   yum: name={{item}} state=present
   with_items:
       - nodejs
+      - npm
   when: ALL_IN_ONE == False
 
-- name: Install npm
-  shell: curl -L https://www.npmjs.org/install.sh | sh
-  when: ALL_IN_ONE == False
+# - name: Install npm
+#   shell: curl -L https://www.npmjs.org/install.sh | sh
+#   when: ALL_IN_ONE == False
 
 - name: Install node.js module forever as global
   npm: name=forever global=yes

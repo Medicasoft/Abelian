@@ -2,9 +2,9 @@
 # Licensed under the Apache License, Version 2.0 the "License";
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -12,19 +12,20 @@
 # limitations under the License.
 
 - name: Install JDK dependencies
+  apt: name=software-properties-common state=present
   apt: name=python-software-properties state=present
 
-- name: Add JDK repository  
+- name: Add JDK repository
   apt_repository: repo=ppa:webupd8team/java state=present
 
 - name: Configure JDK installer
-  debconf: name=oracle-java7-installer question="{{item.question}}" value="{{item.value}}" vtype='select' unseen=no
+  debconf: name={{java_apt_package}} question="{{item.question}}" value="{{item.value}}" vtype='select' unseen=no
   with_items:
    - { question: 'shared/accepted-oracle-license-v1-1', value: "true" }
 
 - name: Install jdk
-  apt: name=oracle-java7-installer state=present
-    
+  apt: name={{java_apt_package}} state=present
+
 # - name: Install openjdk7-jdk
 #   apt: name=openjdk-7-jdk state=present force=yes
 
@@ -33,10 +34,10 @@
 
 - name: Download elasticsearch 1.2.1 deb
   get_url: url=https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb dest=/opt/elasticsearch/elasticsearch-1.2.1.deb
-  
-- name: Install elasticsearch 1.2.1  
-  apt: deb=/opt/elasticsearch/elasticsearch-1.2.1.deb 
-  
+
+- name: Install elasticsearch 1.2.1
+  apt: deb=/opt/elasticsearch/elasticsearch-1.2.1.deb
+
 - name: Configure elasticsearch
   lineinfile: line="{{item}}" dest=/etc/elasticsearch/elasticsearch.yml state=present
   with_items:
@@ -44,14 +45,14 @@
     - "node.name: logstash_node"
   notify:
     - Restart elasticsearch
-    
+
 - name: Start ES on boot
   command: sudo update-rc.d elasticsearch defaults 95 10
-  
-- name: Install ES curator  
+
+- name: Install ES curator
   pip: name=elasticsearch-curator state=present
-  
-#TODO # Create /etc/cron.daily/elasticsearch_curator Cron Job  
+
+#TODO # Create /etc/cron.daily/elasticsearch_curator Cron Job
 #- name: Set execute permision on /etc/cron.daily/elasticsearch_curator
 #  file: path=/etc/cron.daily/elasticsearch_curator mode=770
-  
+

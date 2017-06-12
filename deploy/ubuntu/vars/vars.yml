@@ -2,9 +2,9 @@
 # Licensed under the Apache License, Version 2.0 the "License";
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,22 +20,27 @@ EXTERNAL_IP: "10.0.0.1"
 API_HOSTNAME: "abelian.medicasoft.us"
 API_PORT: 8085
 
-#Configure Elastic Search host and port used by Nginx and Logstash; 
-#it can be either an internal host and port (if elasticsearch server is accessible from nginx and logstash with an internal IP / localhost) 
-#or an external host and port 
+#Configure Elastic Search host and port used by Nginx and Logstash;
+#it can be either an internal host and port (if elasticsearch server is accessible from nginx and logstash with an internal IP / localhost)
+#or an external host and port
 ELASTICSEARCH_HOST: "127.0.0.1"
 ELASTICSEARCH_PORT: "9200"
 
 #Configure Elastic Search url used by Kibana
-#it should be the External URL to ElasticSearch (and then the port 80 is FIXED by nginx configuration) e.g. http://external_host:80 
+#it should be the External URL to ElasticSearch (and then the port 80 is FIXED by nginx configuration) e.g. http://external_host:80
 ELASTICSEARCH_HTTP_URL: "http://abelian.medicasoft.us:80"
 
 #kibana
 KIBANA_LOGIN_USERNAME: "abelian"
 KIBANA_LOGIN_PASSWORD: "password"
 
+#Postgres
+POSTGRES_CONFIG_PATH: "/etc/postgresql/9.5/main/pg_hba.conf"
+
+#java
+java_apt_package: oracle-java8-installer
 
 #other paths and settings
-SPOOL: "/var/spool/direct"      
+SPOOL: "/var/spool/direct"
 TEMP_SQL_PATH: "/home/sql-direct-tmp"
 POSTFIX_PASSWORD: "{{lookup('password', 'credentials/postfixpass length=10')}}"

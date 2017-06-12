@@ -1,12 +1,12 @@
--- Copyright 2014 MedicaSoft LLC USA and Info World SRL 
+-- Copyright 2014 MedicaSoft LLC USA and Info World SRL
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
 -- You may obtain a copy of the License at
--- 
+--
 -- http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing, software
--- distributed under the License is distributed on an "AS IS" BASIS,
+-- distributed under the License is distributed on an AS-IS BASIS,
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
@@ -34,7 +34,7 @@ ALTER INDEX address_lower_index
     OWNER TO direct;
 
 -- users trigger on address insert or update
-    
+
 CREATE OR REPLACE FUNCTION setUserDetails() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
   userNameP varchar(100);
@@ -42,13 +42,13 @@ DECLARE
   address varchar(200);
   i int;
 BEGIN
-  address := NEW.address;  
-  i := position('@' in address);    
+  address := NEW.address;
+  i := position('@' in address);
   userNameP := substring(address from 0 for i);
   domainP := substring(address from i+1);
 
   UPDATE users SET userName=userNameP, domain=domainP WHERE id=NEW.id;
-  
+
   RETURN NEW;
 END
 $$;
@@ -58,10 +58,10 @@ DROP TRIGGER IF EXISTS userAddressTrigger on users;
 
 CREATE TRIGGER userAddressTrigger AFTER INSERT OR UPDATE OF address ON users
 FOR EACH ROW EXECUTE PROCEDURE setUserDetails();
-  
 
 
-  
+
+
 CREATE TABLE IF NOT EXISTS messages
 (
   id serial NOT NULL,
@@ -139,7 +139,7 @@ WITH (
 
 ALTER TABLE domains
 OWNER TO direct;
-    
+
 CREATE TABLE IF NOT EXISTS bundles
 (
   id serial NOT NULL,

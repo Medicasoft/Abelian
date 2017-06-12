@@ -2,9 +2,9 @@
 # Licensed under the Apache License, Version 2.0 the "License";
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -13,14 +13,16 @@
 
 ---
 - hosts: all
-  vars_files:    
+  strategy: debug
+  vars_files:
     - vars/vars.yml
-  sudo: yes  
+  sudo: yes
+  gather_facts: False
 
-  tasks:  
+  tasks:
     - include: tasks/prereqs.yml
-    - include: tasks/postgres.yml 
-    - include: tasks/certificates.yml 
+    - include: tasks/postgres.yml
+    - include: tasks/certificates.yml
     - include: tasks/pdns.yml user=postgres
     - include: tasks/postfix.yml user=postgres
     - include: tasks/api_install.yml
@@ -29,6 +31,6 @@
     - include: tasks/logstash.yml
     - include: tasks/kibana.yml
     - include: tasks/nginx.yml
-    
-  handlers: 
+
+  handlers:
     - include: handlers/handlers.yml
