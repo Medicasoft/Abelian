@@ -63,6 +63,7 @@
      with_items: 
         - certdisco.py
         - certvld.py
+        - config.py
         - crypto.py
         - mdn.py
         - smimercv.py
@@ -73,6 +74,7 @@
      with_items: 
         - certdisco.py
         - certvld.py
+        - config.py
         - crypto.py
         - mdn.py
         - smimercv.py

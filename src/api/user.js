@@ -119,7 +119,7 @@ function callAddDomain(req, res, next, filepath) {
 			return next();
 		}
                 if (stdout !== '') {
-        			res.setHeader('location', baseUrl + 'Domain/' + stdout);
+        			res.setHeader('location', baseUrl + 'Domain/' + stdout.trim());
                 }
 		res.send(201);
 		return next();
