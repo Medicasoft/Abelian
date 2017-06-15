@@ -51,7 +51,8 @@ describe("domain", function () {
                         expect(entry.content).to.have.property('name');
                         expect(entry.content).to.have.property('anchor_path');
                         expect(entry.content).to.have.property('crl_path');
-                        expect(entry.content).to.have.property('crypt_cert');
+                        // This field was removed in commit: https://github.com/Medicasoft/Abelian/commit/30b8ee1eb74c5bb94dae866dcc03d347cdfd1a10
+                        // expect(entry.content).to.have.property('crypt_cert');
                         expect(entry.content).to.have.property('cert_disco_algo');
   
                         expect(entry.content.name).not.to.be.empty;                        
