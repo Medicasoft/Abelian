@@ -204,6 +204,6 @@ if __name__ == "__main__":
             retval += recipient[1] + '; '
     if retval != '':
         retval = '[smime_errors] Could not send DIRECT mail to the following recipient(s): ' + retval
-    	exit(retval)
+        exit(retval)
     exit()
 
