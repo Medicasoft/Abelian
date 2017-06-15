@@ -22,6 +22,24 @@ var mh = require("./lib/mailbbtestcase");
 var utils = require("./lib/utils");
 var config = require("./config");
 
+var d1='d1@domain1.dcdt30prod.sitenv.org';
+var d2='d2@domain1.dcdt30prod.sitenv.org';
+var d3='d3@domain2.dcdt30prod.sitenv.org';
+var d4='d4@domain2.dcdt30prod.sitenv.org';
+var d5='d5@domain1.dcdt30prod.sitenv.org';
+var d6='d6@domain4.dcdt30prod.sitenv.org';
+var d7='d7@domain2.dcdt30prod.sitenv.org';
+var d8='d8@domain5.dcdt30prod.sitenv.org';
+var d9='d9@domain1.dcdt30prod.sitenv.org';
+var d10='d10@domain3.dcdt30prod.sitenv.org';
+var d11='d11@domain6.dcdt30prod.sitenv.org';
+var d12='d12@domain7.dcdt30prod.sitenv.org';
+var d13='d13@domain8.dcdt30prod.sitenv.org';
+var d14='d14@domain1.dcdt30prod.sitenv.org';
+var d15='d15@domain2.dcdt30prod.sitenv.org';
+var d16='d16@domain5.dcdt30prod.sitenv.org';
+
+
 chai.config.includeStack = true;
 
 var aServer = new directserver.DirectServer(config.aServerHost, config.aServerServiceUrl, config.aServerServicePort, config.aServerDomain);
@@ -144,7 +162,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d5@domain1.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d5, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -157,7 +175,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d6@domain4.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d6, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -170,7 +188,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d7@domain2.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d7, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -183,7 +201,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d8@domain5.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d8, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -196,7 +214,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d9@domain1.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d9, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -209,7 +227,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d10@domain3.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d10, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -222,7 +240,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d11@domain6.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d11, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -235,7 +253,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d12@domain7.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d12, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -248,7 +266,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d13@domain8.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d13, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -261,7 +279,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d14@domain1.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d14, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -274,7 +292,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d15@domain2.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d15, aServer));
             aServer.sendMessage(cb, message);
         });
 
@@ -287,7 +305,7 @@ describe("Abelian", function () {
                 }
                 done(new Error("expected error on send"));
             };
-            var message = utils.generateMessage(generateEmail(aUser1, "d16@domain5.demo.direct-test.com", aServer));
+            var message = utils.generateMessage(generateEmail(aUser1, d16, aServer));
             aServer.sendMessage(cb, message);
         });
 
