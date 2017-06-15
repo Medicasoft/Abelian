@@ -26,7 +26,7 @@ def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128
         smime = SMIME.SMIME()
         #smime.pkey = sender_key
         #smime.x509 = sender_cert
-    	signature = ''
+        signature = ''
         logging.debug('Signing outgoing message')
         command = ('/usr/bin/env', 'openssl', 'cms', '-sign', '-signer', sender_cert , '-inkey', sender_key)
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=-1)
