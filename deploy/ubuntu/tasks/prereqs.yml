@@ -2,26 +2,28 @@
 # Licensed under the Apache License, Version 2.0 the "License";
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+- name: install python 2
+  raw: test -e /usr/bin/python || (apt -y update && apt install -y python-minimal)
 
-- name: Update repositories cache 
-  apt: update_cache=yes      
- 
+- name: Update repositories cache
+  apt: update_cache=yes
+
 - name: Install unzip
   apt: name=unzip state=present
- 
+
 - name: Create Direct group
   group: name=direct state=present
 
 - name: Create Direct user
-  user: name=direct home={{SPOOL}} group=direct    
+  user: name=direct home={{SPOOL}} group=direct
 
 - name: Create Direct file structure
   file: path={{item}} state=directory group=direct owner=direct mode=770
@@ -39,7 +41,7 @@
     - "{{SPOOL}}/tmp"
     - "{{SPOOL}}/tools"
     - /home/root/
-    - /home/root/direct   
+    - /home/root/direct
 
 - name: Copy scripts in {{SPOOL}}/tools folder
   copy: src=../../src/tools/ dest={{SPOOL}}/tools/
@@ -51,7 +53,7 @@
   file: path=~direct/.bash_profile state=touch
 
 - name: Add {{SPOOL}}/tools folder to PATH for direct user
-  lineinfile: dest=~direct/.bash_profile line='{{item}}' state=present 
+  lineinfile: dest=~direct/.bash_profile line='{{item}}' state=present
   with_items:
     - "PATH=$PATH:{{SPOOL}}/tools"
     - "export PATH"

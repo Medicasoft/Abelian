@@ -2,9 +2,9 @@
 # Licensed under the Apache License, Version 2.0 the "License";
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,12 +16,12 @@
      # yum: name={{item}} state=present
      # with_items:
        # - postfix
-   
- 
-       
+
+
+
    - name: Postfix | Download archive
      get_url: url=ftp://ftp.porcupine.org/mirrors/postfix-release/official/postfix-2.11.1.tar.gz dest=/usr/local/src/ timeout=60
-   
+
    - name: Postfix | Unarchive download
      command: chdir=/usr/local/src/ tar xzvf postfix-2.11.1.tar.gz
 
@@ -29,7 +29,7 @@
      yum: name={{item}} state=present
      with_items:
        - db4-devel
-       - cyrus-sasl 
+       - cyrus-sasl
        - cyrus-sasl-devel
        - openssl
        - openssl-devel
@@ -37,49 +37,49 @@
        - pcre-devel
        - openldap
        - openldap-devel
-        
+
    - name: Postfix | Copy header db.h
      command: cp /usr/include/libdb4/db.h /usr/include
      when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
 
    - name: Postfix | Execute make makefiles1
-     command: chdir=/usr/local/src/postfix-2.11.1 make makefiles CCARGS='-fPIC -DUSE_TLS -DUSE_SSL -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -DPREFIX=\\"/usr\\" -DHAS_PCRE -I/usr/include/openssl -DHAS_PGSQL -I/usr/pgsql-9.3/lib -I/usr/include/sasl -I/usr/pgsql-9.3/include -I/usr/include' AUXLIBS='-L/usr/lib64 -L/usr/lib64/libdb4 -L/usr/lib64/openssl -lssl -lcrypto -L/usr/pgsql-9.3/lib -lpq -L/usr/lib64/sasl2 -lsasl2 -lpcre -lz -lm -lldap -llber -Wl,-rpath,/usr/lib64/openssl -pie -Wl,-z,relro' OPT='-O' DEBUG='-g'
+     command: chdir=/usr/local/src/postfix-2.11.1 make makefiles CCARGS='-fPIC -DUSE_TLS -DUSE_SSL -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -DPREFIX=\\"/usr\\" -DHAS_PCRE -I/usr/include/openssl -DHAS_PGSQL -I/usr/pgsql-9.6/lib -I/usr/include/sasl -I/usr/pgsql-9.6/include -I/usr/include' AUXLIBS='-L/usr/lib64 -L/usr/lib64/libdb4 -L/usr/lib64/openssl -lssl -lcrypto -L/usr/pgsql-9.6/lib -lpq -L/usr/lib64/sasl2 -lsasl2 -lpcre -lz -lm -lldap -llber -Wl,-rpath,/usr/lib64/openssl -pie -Wl,-z,relro' OPT='-O' DEBUG='-g'
      when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '>=') }}
 
    - name: Postfix | Execute make makefiles2
-     command: chdir=/usr/local/src/postfix-2.11.1 make makefiles CCARGS='-fPIC -DUSE_TLS -DUSE_SSL -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -DPREFIX=\\"/usr\\" -DHAS_PCRE -I/usr/include/openssl -DHAS_PGSQL -I/usr/pgsql-9.3/lib -I/usr/include/sasl -I/usr/pgsql-9.3/include -I/usr/include' AUXLIBS='-L/usr/lib64 -L/usr/lib64/libdb4 -L/usr/lib64/openssl -lssl -lcrypto -L/usr/pgsql-9.3/lib -lpq -L/usr/lib64/sasl2 -lsasl2 -lpcre -lz -lm -lldap -llber -Wl,-rpath,/usr/lib64/openssl -pie -Wl,-z,relro' OPT='-O' DEBUG='-g'     
+     command: chdir=/usr/local/src/postfix-2.11.1 make makefiles CCARGS='-fPIC -DUSE_TLS -DUSE_SSL -DUSE_SASL_AUTH -DUSE_CYRUS_SASL -DPREFIX=\\"/usr\\" -DHAS_PCRE -I/usr/include/openssl -DHAS_PGSQL -I/usr/pgsql-9.6/lib -I/usr/include/sasl -I/usr/pgsql-9.6/include -I/usr/include' AUXLIBS='-L/usr/lib64 -L/usr/lib64/libdb4 -L/usr/lib64/openssl -lssl -lcrypto -L/usr/pgsql-9.6/lib -lpq -L/usr/lib64/sasl2 -lsasl2 -lpcre -lz -lm -lldap -llber -Wl,-rpath,/usr/lib64/openssl -pie -Wl,-z,relro' OPT='-O' DEBUG='-g'
      when: ansible_os_family == "RedHat" and {{ ansible_distribution_version | version_compare('7.0', '<') }}
 
    - name: Postfix | Execute make
      command: chdir=/usr/local/src/postfix-2.11.1 make
-     
+
    - name: Postfix | Execute make upgrade
      command: chdir=/usr/local/src/postfix-2.11.1 make upgrade
-   
+
    - name: Postfix | Configure Postfix
      lineinfile: dest=/etc/postfix/main.cf regexp='^\s*inet_interfaces\s*=.*' line="inet_interfaces=all"
      notify: Restart postfix
-  
+
    - name: Create the postfix user 'direct'
      postgresql_user: name=direct state=present encrypted=yes role_attr_flags=NOSUPERUSER,NOCREATEDB,NOCREATEROLE
      sudo_user: "{{postgresql_admin_user}}"
-     
+
    - name: Create the postfix database 'maildb'
      postgresql_db: name=maildb state=present owner=direct
      sudo_user: "{{postgresql_admin_user}}"
-     
+
    - name: Create postfix database structure
      command: psql -d maildb -c "{{lookup('file', '../files/postfix.sql')}}"
      sudo_user: "{{postgresql_admin_user}}"
- 
-     
+
+
    - name: Create pgsql directory
      file: path=/etc/postfix/pgsql state=directory
-  
+
    - name: Add postfix user to maildb
      postgresql_user: name=postfix state=present password={{POSTFIX_PASSWORD}} db=maildb role_attr_flags=LOGIN
      sudo_user: "{{postgresql_admin_user}}"
-   
+
    - name: Grant privileges on tables to user
      postgresql_privs: database=maildb roles=postfix schema=public type=table objs=ALL_IN_SCHEMA grant_option=yes state=present priv=ALL
      sudo_user: "{{postgresql_admin_user}}"
@@ -89,18 +89,18 @@
      sudo_user: "{{postgresql_admin_user}}"
 
    - name: Set authentication method for postfix
-     lineinfile: dest=/var/lib/pgsql/9.3/data/pg_hba.conf           
+     lineinfile: dest=/var/lib/pgsql/9.6/data/pg_hba.conf
            regexp='(# Put your actual configuration here\n)(local   maildb          postfix                                 password)?'
-           backrefs=yes 
-           state=present 
-           line='\1local   maildb          postfix                                 password\nlocal   maildb          direct                                 trust' 
+           backrefs=yes
+           state=present
+           line='\1local   maildb          postfix                                 password\nlocal   maildb          direct                                 trust'
      sudo_user: "{{postgresql_admin_user}}"
-     # notify: 
+     # notify:
      # - Reload postgres
-  
+
    - name: Postfix | Reload postgres after setting authentication method
-     service: name=postgresql-9.3 state=reloaded
-   
+     service: name=postgresql-9.6 state=reloaded
+
    - name: Postfix | Add local domain to domains database
      command: "{{SPOOL}}/tools/direct_domain add -d {{MAIL_DOMAIN}} -t local"
      sudo_user: direct
@@ -110,13 +110,13 @@
        - add_domain
        - add_root_and_domain
 
-     
+
    - name: Postfix | Add virtual maps
      template: src=templates/{{item}} dest=/etc/postfix/pgsql/{{item}}
      with_items:
         - virtual_mailbox_maps.cf
         - virtual_mailbox_domains.cf
-        
+
 
    - name: Postfix | Edit postfix config file and service entries
      command: postconf {{item}}
@@ -127,7 +127,7 @@
         - "-e 'virtual_mailbox_domains =pgsql:/etc/postfix/pgsql/virtual_mailbox_domains.cf'"
         - "-e 'virtual_mailbox_maps = pgsql:/etc/postfix/pgsql/virtual_mailbox_maps.cf'"
         - "-M direct-rx/unix='direct-rx unix - n n - - pipe flags=RXq user=direct argv=/var/spool/direct/smimercv.py ${queue_id} ${recipient} ${sender}'"
-     notify: 
+     notify:
      - Restart postfix
-     
+
 

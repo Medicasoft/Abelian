@@ -2,9 +2,9 @@
 # Licensed under the Apache License, Version 2.0 the "License";
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 # http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,14 +16,14 @@
 
 - name: Copy API config file
   template: src=templates/config.js.j2 dest={{SPOOL}}/api/config.js
-  
+
 - name: Install the required Node.js packages
   npm: path={{SPOOL}}/api
-    
-- name: Set Node.js app as Upstart service
-  template: src=templates/direct.conf.j2 dest=/etc/init/direct.conf
-  
+
+- name: Set Node.js app as systemd service
+  template: src=templates/direct.service.j2 dest=/etc/systemd/system/direct.service
+
 - name: Start Node.js service
-  service: name=direct state=started  
+  service: name=direct state=started
 
 
