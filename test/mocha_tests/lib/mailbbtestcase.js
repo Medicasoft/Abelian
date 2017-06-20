@@ -127,16 +127,13 @@ TestResult.prototype._setReceivedEmailFromReceiving = function(email) {
 };
 
 TestResult.prototype.setReceivedEmail = function(ip, email) {
-
-    
-    
 	//utils.logMessage("[%s] ...received email", ip);
 	var that = this;
 	return this._actOnIP(ip,
 		function () { // for ip == sending ip (searching for MDN message)
 		    if (email.headers["content-type"] !== undefined && email.headers["content-type"].indexOf('report-type="disposition-notification"') != -1) { //is MDN
-		        if (email.attachments.length >= 2) {
-		            var content = email.attachments[1].content.toString();
+		        for(var i=0; i<email.attachments.length; i++) {
+		            var content = email.attachments[i].content.toString();
 		            var match = /Original-Message-ID:\s(.*)\s/.exec(content);
 		            if (match) {
 		                var origMsgId = match[1];
@@ -149,8 +146,6 @@ TestResult.prototype.setReceivedEmail = function(ip, email) {
 		                    return true;
 		                }
 		            }
-
-
 		        }
 		    }
 		    return false;
