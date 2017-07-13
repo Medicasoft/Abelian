@@ -11,11 +11,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: Install node.js
-  yum: name={{item}} state=present
+- name: Install nodesource repo
+  shell: curl --silent --location {{ nodejs_installation_script_url }} | bash -
+  become: true
+  args:
+    creates: /usr/bin/npm
+  when: ALL_IN_ONE == False
+
+- name: Install tools
+  yum: name={{ item }} state=present
   with_items:
-      - nodejs
-      - npm
+    - git
+    - gcc-c++ 
+  when: ALL_IN_ONE == False
+
+- name: Install nodejs
+  yum: name={{ item }} state=present disablerepo=* enablerepo=nodesource
+  become: true
+  with_items:
+    - nodejs
   when: ALL_IN_ONE == False
 
 # - name: Install npm

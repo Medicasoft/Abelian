@@ -62,3 +62,9 @@ postgresql_pg_hba_default:
 #pdns
 pdns_password : "password"
 pdns_fill_database : true
+
+# https://nodejs.org/en/download/package-manager/#enterprise-linux-and-fedora
+# Node.js version 4.x LTS
+nodejs_installation_script_url: https://rpm.nodesource.com/setup_4.x
+# Node.js version 0.10.x
+# nodejs_installation_script_url: https://rpm.nodesource.com/setup
