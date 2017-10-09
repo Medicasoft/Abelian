@@ -202,6 +202,7 @@ if __name__ == "__main__":
         err = send_message(sender, recipient[1], message_id, eml)
         if err != 0:
             retval += recipient[1] + '; '
+            logging.warning('0: from=<%s>, to=<%s>, message-id=%s, status=failed (failure)', sender, recipient[1], message_id) 
     if retval != '':
         retval = '[smime_errors] Could not send DIRECT mail to the following recipient(s): ' + retval
         exit(retval)

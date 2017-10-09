@@ -17,18 +17,24 @@ limitations under the License.
 from M2Crypto import BIO, SMIME, X509
 import subprocess, threading, logging
 
+RFC822 = """content-type: message/rfc822
+
+%s
+"""
+
 def writer(proc, message):
     proc.stdin.write(message)
     proc.stdin.close()
 
 def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128_cbc'):
     try:
+        message = RFC822 % message
         smime = SMIME.SMIME()
         #smime.pkey = sender_key
         #smime.x509 = sender_cert
         signature = ''
         logging.debug('Signing outgoing message')
-        command = ('/usr/bin/env', 'openssl', 'cms', '-sign', '-signer', sender_cert , '-inkey', sender_key)
+        command = ('/usr/bin/env', 'openssl', 'cms', '-sign', '-signer', sender_cert , '-inkey', sender_key, '-md', 'sha256')
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, bufsize=-1)
         #proc.stdin.write(message)
         #signature, stderr = proc.communicate()
@@ -38,7 +44,7 @@ def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128
             signature += line
         thread.join()
         logging.debug('Message signed')
-        
+
         logging.debug('Encrypting message')
 
         #signature = smime.sign(BIO.MemoryBuffer(message), flags=SMIME.PKCS7_DETACHED)
@@ -50,8 +56,8 @@ def to_smime(message, sender_key, sender_cert, recipient_cert, cipher = 'aes_128
         cert_stack.push(X509.load_cert_der_string(recipient_cert))
 
         smime.set_x509_stack(cert_stack)
-        smime.set_cipher(SMIME.Cipher(cipher)) 
-        
+        smime.set_cipher(SMIME.Cipher(cipher))
+
         message_encrypted = smime.encrypt(message_signed)
 
         out = BIO.MemoryBuffer()

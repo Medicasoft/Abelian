@@ -14,4 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-send_dispatched_mdn = True
+send_dispatched_mdn = False
+log_mdn = True
+mdn_log_file = "/tmp/mdn.log"

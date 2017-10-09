@@ -72,11 +72,13 @@ def verify_cert(cert, local_domain, addr):
     import subprocess, os, glob
     ca_path = os.path.join(CADIR, 'trust', local_domain)
     logging.debug('Verifying certificate expiration, signature, revocation and path: %s', addr)
-    command = ('/usr/bin/env', 'openssl', 'verify', '-CApath', ca_path)
+    command = ('/usr/bin/env', 'openssl', 'verify', '-crl_check', '-CApath', ca_path)
 
-    issuer_hash = hex(cert.get_issuer().as_hash())[2:-1]
-    if len(glob.glob(os.path.join(ca_path, issuer_hash, '.r*'))):
-        command.append('-crl_check')
+    #issuer_hash = hex(cert.get_issuer().as_hash())[2:-1]
+    #logging.debug('Issuer hash: %s', str(issuer_hash))
+    #if len(glob.glob(os.path.join(ca_path, issuer_hash, '.r*'))):
+    #    command.append('-crl_check')
+    #    logging.debug('Verifing CRL too')
     proc = subprocess.Popen(command, stdin = subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc.stdin.write(cert.as_pem())
     stdout, stderr = proc.communicate()

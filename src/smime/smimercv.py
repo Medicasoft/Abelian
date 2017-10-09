@@ -24,8 +24,7 @@ UNAVAILABLE = 69
 TEMPDIR = '/var/spool/direct/tmp/'
 CADIR = '/var/spool/direct/ca'
 
-TEMPLATE = """
------BEGIN PKCS7-----
+TEMPLATE = """-----BEGIN PKCS7-----
 %s
 -----END PKCS7-----
 """
@@ -43,10 +42,7 @@ def process_message(queue_id, recipient, sender, message):
     subject = None
 
     mail = Parser().parsestr(message, True)
-    if mail['message-id'] != None:
-        message_id = mail['message-id']
-    if mail['subject'] != None:
-        subject = mail['subject']
+    
 
     logging.debug('Decrypting incoming message: %s', queue_id)
     command = ('/usr/bin/env', 'openssl', 'cms', '-decrypt', '-recip', recipient_cert , '-inkey', recipient_key)
@@ -56,8 +52,6 @@ def process_message(queue_id, recipient, sender, message):
 
     mail = Parser().parsestr(msg_sign)
 
-    if (subject == None) and (mail['subject'] != None):
-        subject = mail['subject']
     is_mdn = False
     sig = None
     dispatch_mdn_request = False
@@ -94,9 +88,11 @@ def process_message(queue_id, recipient, sender, message):
             sig = TEMPLATE % sig
             break
     if sig == None:
+        logging.debug('Missing signature. Exiting')
         return None
 
     if not verify_sig_cert(sig, sender, recipient_domain):
+        logging.debug('Invalid signing certificate. Exiting')
         return None
 
     command = ('/usr/bin/env', 'openssl', 'cms', '-verify', '-CApath', ca_path)
@@ -117,7 +113,7 @@ def save_message(queue_id, recipient, sender, msg_orig, msg_plain):
     guid = str(uuid.uuid4())
     cur.execute("INSERT INTO messages(queue_id,recipient,sender,original,msg,domain,guid) VALUES(%s,%s,%s,%s,%s,%s,%s);",(queue_id,recipient,sender,msg_orig,msg_plain,domain,guid))
     logging.debug('Inserted new mail with guid ' + guid);
-
+    logging.debug('%s: from=<%s>, to=<%s>, status=received (stored as %s)',queue_id,sender,recipient,guid)
     conn.commit()
 
 def send_mdn(sender, recipient, orig_message_id, subject, msg_plain, disposition_type):
@@ -133,11 +129,15 @@ def verify_sig_cert(sig, sender, local_domain):
     certs = p7.get0_signers(X509.X509_Stack())
     if len(certs) == 0:
         return False
-    if not certvld.verify_cert(certs[0], local_domain, sender):
-        return False
-    if not certvld.verify_binding(certs[0], sender, sender.partition('@')[2], True):
-        return False
-    return True
+    for cert in certs:
+        if certvld.verify_cert(cert, local_domain, sender) and certvld.verify_binding(cert, sender, sender.partition('@')[2], True):
+            return True
+    return False
+    #if not certvld.verify_cert(certs[0], local_domain, sender):
+    #    return False
+    #if not certvld.verify_binding(certs[0], sender, sender.partition('@')[2], True):
+    #    return False
+    #return True
 
 if __name__ == "__main__":
     import logging.handlers,platform
@@ -162,10 +162,16 @@ if __name__ == "__main__":
 
     plain = retval[0]
     is_mdn = retval[1]
-    message_id = retval[2]
+    message_id = None
     subject = retval[3]
     dispatch_mdn_request = retval[4]
 
+    mail = Parser().parsestr(plain, True)
+    logging.debug('Content-type: %s', mail.get_content_type())
+    if mail.get_content_type() == 'message/rfc822':
+        mail = Parser().parsestr(mail.get_payload(), True)
+    message_id = mail['message-id']
+    logging.debug('MDN message-id: %s', message_id)
 
     if not is_mdn: #not MDN
         mdn_rc = send_mdn(recip, sender, message_id, subject, plain, 'processed')
