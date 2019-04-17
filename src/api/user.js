@@ -222,7 +222,7 @@ function executeSql(req, res, next, type, queryType, params, successCode) {
                                     ],
                                     "text": "Duplicate"
                                 },
-                                "details" : { text: "Email address already exists!" }
+                                "details" : { text: "Email address already exists!", coding: [{ code: "duplicate", display: "Email address already exists!" }] }
                             }]
                         };
                         res.send(422, outcome);
