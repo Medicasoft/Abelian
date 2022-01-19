@@ -1,0 +1,42 @@
+{
+  "author": "",
+  "dependencies": {
+    "async": "^2.5.0",
+    "bunyan": "^1.8.12",
+    "getdns": "^1.0.0",
+    "jszip": "3.1.5",
+    "knex": "^0.15.2",
+    "ldapjs": "^1.0.1",
+    "libxmljs": "^0.18.7",
+    "mailparser": "^0.6.2",
+    "modern-syslog": "^1.1.4",
+    "mysql": "^2.16.0",
+    "node-uuid": "^1.4.8",
+    "nodemailer": "^4.4.0",
+    "request": "^2.83.0",
+    "restify": "~2.8.1",
+    "smtp-server": "^3.3.0",
+    "underscore": "^1.8.3",
+    "x509": "^0.3.2",
+    "xlsx": "0.15.6",
+    "xml2js": "^0.4.19"
+  },
+  "description": "High performance HISP",
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^4.0.1",
+    "proxyquire": "^2.1.0"
+  },
+  "homepage": "https://bitbucket.org/info-world/abelian.js#readme",
+  "license": "ISC",
+  "main": "index.js",
+  "name": "abelian",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/info-world/abelian.js.git"
+  },
+  "scripts": {
+    "test": "mocha test/unit"
+  },
+  "version": "1.0.0"
+}

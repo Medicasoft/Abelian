@@ -1,0 +1,13 @@
+Date: Wed, 10 Apr 2019 14:25:11 +0000
+Message-Id: <1554906311794@direct.medicasoft.us>
+Disposition-Notification-To: medicasofttest@direct.medicasoft.us
+Disposition-Notification-Options:
+ X-DIRECT-FINAL-DESTINATION-DELIVERY=optional,true
+From: medicasofttest@direct.medicasoft.us
+To: wyman.bowers@direct.schiex.state.sc.us
+Subject: Re: Direct April Testing
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<p>Received and readable. Thanks.</p>

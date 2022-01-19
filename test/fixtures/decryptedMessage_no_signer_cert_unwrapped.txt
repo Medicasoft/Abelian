@@ -1,0 +1,28 @@
+Content-Type: multipart/mixed;
+        boundary="----=_Part_19529_740612616.1538036771769"
+
+------=_Part_19529_740612616.1538036771769
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+Body unwrapped
+------=_Part_19529_740612616.1538036771769
+Content-Type: text/xml; name=CCDA_Ambulatory.xml
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename=CCDA_Ambulatory.xml
+
+ALTEREDDDDPD94bWwgdmVyc2lvbj0iMS4wIj8+DQo8P3htbC1zdHlsZXNoZWV0IHR5cGU9InRleHQveHNsIiBo
+cmVmPSIuLi9zdHlsZXNoZWV0L0NEQS54c2wiPz4NCjwhLS0NCglUaXRsZTogVVNfUmVhbG1fSGVh
+Pg0KPC9DbGluaWNhbERvY3VtZW50Pg0KDQo=
+
+------=_Part_19529_740612616.1538036771769
+Content-Type: text/xml; name=CCDA_Ambulatory2.xml
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename=CCDA_Ambulatory2.xml
+
+ALTEREDDDDPD94bWwgdmVyc2lvbj0iMS4wIj8+DQo8P3htbC1zdHlsZXNoZWV0IHR5cGU9InRleHQveHNsIiBo
+cmVmPSIuLi9zdHlsZXNoZWV0L0NEQS54c2wiPz4NCjwhLS0NCglUaXRsZTogVVNfUmVhbG1fSGVh
+Pg0KPC9DbGluaWNhbERvY3VtZW50Pg0KDQo=
+------=_Part_19529_740612616.1538036771769--
+
+

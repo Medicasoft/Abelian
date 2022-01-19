@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+
+""" Copyright 2014 MedicaSoft LLC USA and Info World SRL
+Licensed under the Apache License, Version 2.0 the "License";
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+#Make self signed certificates
+import argparse, subprocess, sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-cert', nargs='+', help='list of certificates. They should be in PEM format')
+parser.add_argument('-o', '--out', help='output file name')
+
+parms = parser.parse_args()
+certs = parms.cert
+
+if certs == None:
+    certs = []
+    for line in sys.stdin:
+        certs.append(line.replace('\n', ''))
+
+if len(certs) == 0:
+    print 'Empty list of certificates'
+    exit(2)
+
+out = parms.out if parms.out != None else 'bundle.p7b'
+conc = out + '.crt'
+with open(conc, 'w') as fout:
+    for cert in certs:
+        with open(cert, 'r') as fin:
+            fout.write(fin.read())
+
+cmd = ('openssl', 'crl2pkcs', '-nocrl', '-out', out, '-outform', 'der', '-certfile', conc)
+ret = subprocess.call(cmd)
+if ret != 0:
+    exit(ret)

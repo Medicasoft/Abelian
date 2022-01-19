@@ -1,0 +1,32 @@
+Content-Type:message/rfc822
+
+MIME-Version:1.0
+To:mariamed@direct.orocert.medicasoft.md
+From:clayton.willey@my.provider-directmsg.com
+Content-Type:multipart/report; boundary=87d0775ca7644264b11a293425659adf; report-type=disposition-notification
+Subject:processed:Test message (please disregard)
+Message-ID:<dbb8cf82-da00-4381-8236-8b1ae5ccf3c2@my.provider-directmsg.com>
+Date:Thu, 01 Nov 2018 10:26:11 -0400
+X-CareEvMDN:0
+X-CareEv-ReceivedDate:Thu, 1 Nov 2018 10:26:11 -0400
+X-CareEvUID:142626a3dde211e88169005056971597
+
+
+--87d0775ca7644264b11a293425659adf
+Content-Type:text/plain
+
+Your Direct message to clayton.willey@my.provider-directmsg.com has been processed at my.provider-directmsg.com on Thu, 01 Nov 2018 14:26:11 GMT.
+--87d0775ca7644264b11a293425659adf
+Content-Type:message/disposition-notification
+
+Disposition:automatic-action/MDN-sent-automatically;processed
+Reporting-UA:my.provider-directmsg.com;Direct Agent
+Final-Recipient:rfc822;clayton.willey@my.provider-directmsg.com
+Original-Message-ID:<1541082244213@direct.orocert.medicasoft.md>
+
+--87d0775ca7644264b11a293425659adf--
+
+
+
+
+

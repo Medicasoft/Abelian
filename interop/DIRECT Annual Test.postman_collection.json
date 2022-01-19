@@ -1,0 +1,189 @@
+{
+	"info": {
+		"_postman_id": "23f9fa97-9873-4443-bcb8-9c949a760936",
+		"name": "DIRECT Annual Test",
+		"description": "For the variables to work, passing the X-XSRF-TOKEN into the supplemental calls in the collection after login, the option for \"Save cookies after collection run\" MUST be UNCHECKED, and the box for \"Run collection without using stored cookies\" MUST be CHECKED. It's counter-intuitive, but that option messes things up and actually keeps old / stale cookies that end up failing the collection calls for posting mail to Direct.\n\nAgain:\n- Check the box \"Run collection without using stored cookies\"\n- UN-Check the box \"Save cookies after collection run\"",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "54005afb-6ce9-4c05-8a9c-ab3f5679dca4",
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"//console.log(pm.response.headers.get('X-XSRF-TOKEN'));",
+							"// postman.setEnvironmentVariable('auth-xsrf-token', pm.response.headers.get('X-XSRF-TOKEN'));",
+							"pm.environment.set(\"xXsrfToken\", pm.response.headers.get('X-XSRF-TOKEN'));"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "{{username}}",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "{{passwordHashFoo}}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}security/login",
+					"host": [
+						"{{baseUrl}}security"
+					],
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Message POST",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "71e0867d-4e6a-4d22-a35f-b82932e88b2e",
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([201,202]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					},
+					{
+						"key": "XSRF-TOKEN",
+						"value": "{{xXsrfToken}}",
+						"disabled": true
+					},
+					{
+						"key": "X-XSRF-TOKEN",
+						"value": "{{xXsrfToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"attachments\": [{\n\t\t\"display\": \"Sample CCD 1.xml\",\n\t\t\"reference\": \"Binary/5efa95d8-9491-41a7-b8ed-dcc65b29cd97\"\n\t}],\n\t\"body\": {\n\t\t\"reference\": \"{{bodyLocation}}\" \n\t},\n\t\"date\": \"{{currentDateTimeZulu}}\",\n\t\"from\": {\n\t\t\"display\": \"Interop Testing (medicasofttest@direct.medicasoft.us)\",\n\t\t\"email\": \"medicasofttest@direct.medicasoft.us\"\n\t},\n\t\"isArchived\": false,\n\t\"owner\": {\n\t\t\"reference\": \"{{userRef}}\"\n\t},\n\t\"resourceType\": \"Message\",\n\t\"status\": \"WaitingToBeSent\",\n\t\"subject\": \"Interop Test Message\",\n\t\"to\": [{\n\t\t\"display\": \"Interop Testing ({{destinationEmailAddress}})\",\n\t\t\"email\": \"{{destinationEmailAddress}}\"\n\t}]\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}fhir/Message",
+					"host": [
+						"{{baseUrl}}fhir"
+					],
+					"path": [
+						"Message"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Body POST",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"id": "f0e22ee2-9456-4a06-8013-6dd9b87856f7",
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Successful POST request\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([201,202]);",
+							"});",
+							"pm.test(\"Location is present\", function () {",
+							"    pm.response.to.have.header(\"Location\");",
+							"});",
+							"",
+							"pm.environment.set(\"bodyLocation\", pm.response.headers.get('Location').split(\"/fhir/\")[1]);",
+							"",
+							"pm.environment.set(\"currentDateTimeZulu\", new Date().toISOString());",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-XSRF-TOKEN",
+						"value": "{{xXsrfToken}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "<p>Please confirm that this is received and readable.</p>"
+				},
+				"url": {
+					"raw": "{{baseUrl}}fhir/Binary",
+					"host": [
+						"{{baseUrl}}fhir"
+					],
+					"path": [
+						"Binary"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "d7cc1bd4-dac5-4ef4-a36e-d1d5a52134c1",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "b1623e41-1253-4a54-b01b-a8de58cf1ca2",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

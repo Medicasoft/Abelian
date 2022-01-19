@@ -1,0 +1,29 @@
+From: brent.shepherd.1@11287.direct.athenahealth.com
+To: mariamed@direct.orocert.medicasoft.md
+Message-ID:
+ <15906591M11287T20181102083135.reply@11287.direct.athenahealth.com>
+Date: Fri, 2 Nov 2018 08:31:35 -0400
+MIME-Version: 1.0
+Content-Type: multipart/report; boundary="1541161895.7F38BEF91.55751"; report-type="disposition-notification"
+
+
+--1541161895.7F38BEF91.55751
+Date: Fri, 2 Nov 2018 08:31:35 -0400
+MIME-Version: 1.0
+Content-Type: text/plain; charset="US-ASCII"
+Content-Transfer-Encoding: 7bit
+
+Your message was processed successfully. You will receive confirmation when the message is delivered.
+
+Please do not reply to this message.
+
+--1541161895.7F38BEF91.55751
+Date: Fri, 2 Nov 2018 08:31:35 -0400
+MIME-Version: 1.0
+Content-Type: message/disposition-notification
+Content-Transfer-Encoding: 7bit
+
+Final-Recipient: rfc822;brent.shepherd.1@11287.direct.athenahealth.com
+Original-Message-ID: <1541161865949@direct.orocert.medicasoft.md>
+Disposition: automatic-action/MDN-sent-automatically; processed
+--1541161895.7F38BEF91.55751--

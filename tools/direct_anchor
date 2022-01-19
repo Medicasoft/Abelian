@@ -1,0 +1,47 @@
+#!/usr/bin/python
+
+""" Copyright 2014 MedicaSoft LLC USA and Info World SRL
+Licensed under the Apache License, Version 2.0 the "License";
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+import argparse, sys, os, glob, subprocess, anchorlib
+
+CADIR = '/var/spool/direct/ca/trust'
+
+parser = argparse.ArgumentParser()
+parser.add_argument('cmd', choices = ['add', 'remove', 'list'])
+parser.add_argument('-d', '--domain', required = True,help='domain name')
+parser.add_argument('-f', '--file', help='anchor certificate in PEM or DER format')
+parser.add_argument('-s', '--hash', help='certificate subject hash (when removing anchor)')
+parms = parser.parse_args()
+
+store = os.path.join(CADIR, parms.domain.lower())
+if not os.path.isdir(store):
+    os.mkdir(store, 0770)
+
+anchor = None
+if (parms.cmd != 'list') and (parms.hash == None):
+    if parms.file != None:
+        anchor = open(parms.file, 'rb').read()
+    else:
+        anchor = sys.stdin.read()
+
+if parms.cmd == 'add':
+    anchorlib.add_anchor(anchor, store)
+elif parms.cmd == 'remove':
+    if parms.hash == None:
+        anchorlib.remove_anchor(anchor, store)
+    else:
+        anchorlib.remove(parms.hash, store)
+elif parms.cmd == 'list':
+    anchorlib.list_anchors(store)

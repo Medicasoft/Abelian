@@ -1,0 +1,81 @@
+#!/usr/bin/env python
+
+""" Copyright 2014 MedicaSoft LLC USA and Info World SRL
+Licensed under the Apache License, Version 2.0 the "License";
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
+import argparse, urllib2, sys, os, subprocess, anchorlib
+
+CADIR = '/var/spool/direct/ca/trust'
+TEMPDIR = '/var/spool/direct/tmp'
+
+parser = argparse.ArgumentParser(description = 'Import trust bundle')
+parser.add_argument('cmd', choices = ['add', 'remove'])
+parser.add_argument('-d', '--domain', required = True)
+parser.add_argument('-f', '--file')
+parser.add_argument('-u', '--url')
+
+parms = parser.parse_args()
+store = os.path.join(CADIR, parms.domain.lower())
+
+if not os.path.isdir(store):
+    os.mkdir(store, 0770)
+
+bundle = None
+if parms.file != None:
+    bundle = open(parms.file, 'rb')
+elif parms.url != None:
+    try:
+        bundle = urllib2.urlopen(parms.url)
+    except IOError as ioe:
+        print ioe
+        exit(1)
+
+    rescode = bundle.getcode()
+    if rescode != 200:
+        print 'Unable to download bundle. Return code was: %s' % rescode
+        exit(1)
+else:
+    bundle = sys.stdin
+
+certs_file = os.path.join(TEMPDIR, '%d.pem' % os.getpid())
+
+try:
+    start = bundle.read(10)
+    inform = 'pkcs7' if start == '-----BEGIN' else 'der'
+
+    ssl = subprocess.Popen(['openssl', 'cms', '-cmsout', '-noout', '-inform', inform, '-certsout', certs_file], stdin = subprocess.PIPE)
+    ssl.stdin.write(start)
+    ssl.stdin.write(bundle.read())
+    ssl.communicate()
+    if ssl.returncode != 0:
+        exit(ssl.returncode)
+
+    with open(certs_file, 'r') as fp:
+        cert = ''
+        for line in fp:
+            if line == '-----BEGIN CERTIFICATE-----\n':
+                cert = line
+            elif line == '-----END CERTIFICATE-----\n':
+                cert += line
+                if parms.cmd == 'add':
+                    anchorlib.add_anchor(cert, store, False)
+                elif parms.cmd == 'remove':
+                    anchorlib.remove_anchor(cert, store, False)
+            else:
+                cert += line
+
+    exit(anchorlib.rehash_store(store))
+finally:
+    if os.path.isfile(certs_file):
+        os.remove(certs_file)

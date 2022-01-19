@@ -1,0 +1,28 @@
+Content-Type: message/rfc822
+
+Date: Thu, 27 Sep 2018 08:02:06 +0000 (UTC)
+From: mr_wrapped@ttpedge.sitenv.org
+To: pacmariar@patient.orocert.medicasoft.md
+Message-ID: <1576398522.19518.1538035326605@ip-172-31-38-171.us-west-2.compute.internal>
+Subject: Test wrapped
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+        boundary="----=_Part_19517_1004159268.1538035326601"
+
+------=_Part_19517_1004159268.1538035326601
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+Body wrapped
+------=_Part_19517_1004159268.1538035326601
+Content-Type: text/xml; name=CCDA_Ambulatory.xml
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename=CCDA_Ambulatory.xml
+
+ALTEREDDDDPD94bWwgdmVyc2lvbj0iMS4wIj8+DQo8P3htbC1zdHlsZXNoZWV0IHR5cGU9InRleHQveHNsIiBo
+cmVmPSIuLi9zdHlsZXNoZWV0L0NEQS54c2wiPz4NCjwhLS0NCglUaXRsZTogVVNfUmVhbG1fSGVh
+dGlvbj4NCgkJCTwvY29tcG9uZW50Pg0KCQk8L3N0cnVjdHVyZWRCb2R5Pg0KCTwvY29tcG9uZW50
+Pg0KPC9DbGluaWNhbERvY3VtZW50Pg0KDQo=
+
+------=_Part_19517_1004159268.1538035326601--
+
